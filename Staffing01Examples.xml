@@ -1,0 +1,98 @@
+<faux_root>
+<Data>
+    <Header>
+        <ImportDirective>STAFFING01</ImportDirective>
+        <Methods>
+            <CallLog>False</CallLog>
+            <InsertNew>True</InsertNew>
+            <UpdateExisting>True</UpdateExisting>
+        </Methods>
+    </Header>
+    <Rows>
+        <Row>
+            <PayrollID>000102</PayrollID>
+            <LNameMatch>SALA</LNameMatch>
+            <StartDate>2011-01-01</StartDate>
+            <StartTime>07:00:00</StartTime>
+            <Duration>6.67</Duration>
+            <WorkCode>VA</WorkCode>
+            <Shift>2011-02-02</Shift>
+        </Row>
+        <Row Action="Update" Optional="True">
+            <PayrollID>200141</PayrollID>
+            <StartDate>2011-01-01</StartDate>
+            <StartTime>07:00:00</StartTime>
+            <Duration>5.0</Duration>
+            <WorkCode>VA</WorkCode>
+            <Shift>2011-02-02</Shift>
+        </Row>
+    </Rows>
+<Data>
+<!-- Optional - Sample code block to supply Since Date noted below. This code block updates the Since Date 
+    field to 02/05/2015 for this work code instance of Vacation (V), and this instance of the work code, Overtime (SOD). -->
+</Data>
+    <SinceDateList>
+        <SinceDate>
+            <Date>2014-02-05</Date>
+            <Code>V</Code>
+            <Code>
+                SOD
+            </Code>
+        </SinceDate>
+    </SinceDateList>
+</Data>
+<!-- Optional - Sample code block to supply shift and position details. Available in version 6.5.1.2+, and 6.6.1+ -->
+<Data>
+    <Header>
+        <ImportDirective>STAFFING01</ImportDirective>
+        <Methods>
+            <AllorNone VarType="11">False</AllorNone>
+            <UpdateToMatchAssignment>True</UpdateToMatchAssignment>
+        </Methods>
+    </Header>
+    <Rows>
+        <Row action="Update">
+            <StaffingNoIn>22913</StaffingNoIn>
+            <StartDate>2018-7-19</StartDate>
+            <StartTime>00:00:00</StartTime>
+            <Duration>24</Duration>
+            <WorkCode>V</WorkCode>
+        </Row>
+    </Rows>
+</Data>
+<!-- Optional - Sample code block when supplying only the Staffing_No_In. Available in version 6.5.1.2. -->
+<Data>
+    <Header>
+        <ImportDirective>STAFFING01</ImportDirective>
+        <Methods>
+            <AllorNone VarType="11">False</AllorNone>
+            <UpdateToMatchAssignment VarType= "11">True</UpdateToMatchAssignment>
+        </Methods>
+    </Header>
+    <Rows>
+        <Row>
+            <StaffingNoIn>178</StaffingNoIn>
+        </Row>
+    </Rows>
+</Data>
+<!-- Optional - Sample code block when supplying the Staffing_No_In and additional attributes. Available in version 6.5.1.2. -->
+<Data>
+    <Header>
+        <ImportDirective>STAFFING01</ImportDirective>
+        <Methods>
+            <AllorNone VarType="11">False</AllorNone>
+                >True
+            <UpdateToMatchAssignment>True</UpdateToMatchAssignment>
+        </Methods>
+    </Header>
+    <Rows>
+        <Row>
+            <StaffingNoIn>178</StaffingNoIn>
+            <StartDate>2018-10-08</StartDate>
+            <StartTime>06:00:00</StartTime>
+            <Duration>8</Duration>
+            <WorkCode>V</WorkCode>
+        </Row>
+    </Rows>
+</Data>
+</faux_root>

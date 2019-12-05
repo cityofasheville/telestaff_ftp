@@ -1,0 +1,1 @@
+"C:\Program Files\Git\usr\bin\bash.exe" C:\Users\jonwilson\Documents\Telestaff-FTP\sftp.sh

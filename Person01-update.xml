@@ -1,0 +1,17 @@
+<Data>
+    <Header>
+        <ImportDirective>PERSON01</ImportDirective>
+        <Methods>
+            <ImportKey>PayrollID</ImportKey>
+            <AssertBlankInfo VarType="11">False</AssertBlankInfo>
+            <InsertPerson VarType="11">False</InsertPerson>
+            <UpdatePerson VarType="11">True</UpdatePerson>
+        </Methods>
+    </Header>
+    <Rows>
+        <Row Action="Update">
+            <Contact1>1234567890</Contact1>
+            <PayrollID>2000161</PayrollID>
+        </Row>
+    </Rows>
+</Data>
