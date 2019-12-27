@@ -1,0 +1,14 @@
+Remote working directory is /
+Directory /import/staffing.in: no such file or directory
+Remote working directory is /
+Remote directory is now /DEV/import/staffing.in
+local:avl.telestaff_staffing01.csv => remote:/DEV/import/staffing.in/avl.telestaff_staffing01.csv
+Remote working directory is /
+Remote directory is now /DEV/import/staffing.in
+local:avl.telestaff_staffing01.csv => remote:/DEV/import/staffing.in/avl.telestaff_staffing01.csv
+Remote working directory is /
+Remote directory is now /DEV/import/staffing.in
+local:avl.telestaff_staffing01.csv => remote:/DEV/import/staffing.in/avl.telestaff_staffing01.csv
+Remote working directory is /
+Remote directory is now /DEV/import/person.in
+local:avl.telestaff_person01.csv => remote:/DEV/import/person.in/avl.telestaff_person01.csv
