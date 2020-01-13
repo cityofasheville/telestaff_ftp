@@ -1,15 +1,29 @@
-
--- select PayrollID,WorkCode,Duration,StartDate from avl.telestaff_staffing01 for xml path('Row'), root('Rows')
-
--- select * from avl.telestaff_person01
-
-select  CONVERT(XML,
-'<ImportDirective>STAFFING01</ImportDirective> 
-<Methods>
-<AllorNone VarType="11">False</AllorNone>
-<UpdateToMatchAssignment>True</UpdateToMatchAssignment>
-</Methods> ') AS Header,
-CONVERT(XML,(	SELECT PayrollID AS StaffingNoIn,StartDate,Duration,WorkCode
-from avl.telestaff_staffing01 for xml path('Row')
+SELECT
+CONVERT(XML, (
+	SELECT 
+	'STAFFING01' AS ImportDirective,
+	8 AS [Methods/ImportKey/@VarType],
+	'PayrollID' AS [Methods/ImportKey],
+	11 AS [Methods/AllOrNone/@VarType],
+	'True' AS [Methods/AllOrNone],
+	11 AS [Methods/TargetActive/@VarType],
+	'True' AS [Methods/TargetActive],
+	CONVERT(XML, (
+		select  
+		CONVERT(XML,(
+			SELECT *
+			FROM ( 
+				SELECT CONVERT(VARCHAR(10),GETDATE(),23) AS Date , 'VE' AS Code
+				UNION SELECT CONVERT(VARCHAR(10),GETDATE(),23), 'SE'
+				UNION SELECT CONVERT(VARCHAR(10),GETDATE(),23), 'HE'
+			) AS inr
+			FOR XML PATH('SinceDate'), type
+		)) 
+		FOR XML PATH('SinceDateList')
+	))
+	FOR XML PATH('Header')
+)),
+	CONVERT(XML,(	SELECT PayrollID,StartDate,'00:00:00' AS StartTime,Duration,WorkCode
+	from avl.telestaff_staffing01 WHERE WorkCode IN ('VE','HE','SE') FOR XML PATH('Row')
 )) AS Rows
-for xml path('Data')
+FOR XML PATH('Data')

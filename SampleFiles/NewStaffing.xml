@@ -1,0 +1,26 @@
+﻿<Data>
+  <Header>
+    <ImportDirective>STAFFING01</ImportDirective>
+    <Methods>
+      <CallLog>False</CallLog> 
+      <InsertNew>True</InsertNew> 
+      <UpdateExisting>True</UpdateExisting>
+    </Methods>
+  </Header>
+  <Rows>
+    <Row>
+      <PayrollID>1044</PayrollID>
+      <StartDate>2020-01-09</StartDate>
+      <Duration>291.5374</Duration>
+      <WorkCode>VE</WorkCode>
+      <SinceDateList> 
+        <SinceDate> 
+          <Date>2020-01-09</Date>  
+          <Code>VE</Code>
+        </SinceDate> 
+        
+      </SinceDateList> 
+    </Row>
+
+  </Rows>
+</Data>

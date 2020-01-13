@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 # fme telestaffMunisToCSV.fmw
 
 set -a
@@ -20,4 +20,4 @@ echo 'put' $filenameperson >> psftp.scr
 
 echo 'close' >> psftp.scr
 "C:\Program Files\PuTTY\psftp.exe" -P 22 -l $ftp_user -pw $ftp_pw $ftp_url -b ".\psftp.scr" >> sftp.log
-# Unix: sftp $ftp_user@$ftp_url
+# sftp $ftp_user@$ftp_url -b psftp.scr

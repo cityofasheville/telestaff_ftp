@@ -1,0 +1,63 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<Data xmlns="">
+	<Header>
+		<ImportDirective>STAFFING01</ImportDirective>
+		<Methods>
+			<ImportKey VarType="8">PayrollID</ImportKey>
+			<AllOrNone VarType="11">True</AllOrNone>
+			<TargetActive VarType="11">True</TargetActive>
+		</Methods>
+		<SinceDateList>
+			<SinceDate>
+				<Date>2019-03-01</Date>
+				<Code>VA</Code>
+			</SinceDate>
+			<SinceDate>
+				<Date>2019-03-01</Date>
+				<Code>BC</Code>
+			</SinceDate>
+			<SinceDate>
+				<Date>2019-03-01</Date>
+				<Code>Z</Code>
+			</SinceDate>
+			<SinceDate>
+				<Date>2019-03-01</Date>
+				<Code>J</Code>
+			</SinceDate>
+		</SinceDateList>
+	</Header>
+	<Rows>
+		<Row>
+			<PayrollID>2000052</PayrollID>
+			<StartDate>2019-03-01</StartDate>
+			<StartTime>00:00:00</StartTime>
+			<Duration>0.00</Duration>
+			<Shift>A</Shift>
+			<WorkCode>Z</WorkCode>
+		</Row>
+		<Row>
+			<PayrollID>2000052</PayrollID>
+			<StartDate>2019-03-01</StartDate>
+			<StartTime>00:00:00</StartTime>
+			<Duration>72.00</Duration>
+			<Shift>A</Shift>
+			<WorkCode>J</WorkCode>
+		</Row>
+		<Row>
+			<PayrollID>2000052</PayrollID>
+			<StartDate>2019-03-01</StartDate>
+			<StartTime>00:00:00</StartTime>
+			<Duration>233.10</Duration>
+			<Shift>A</Shift>
+			<WorkCode>BC</WorkCode>
+		</Row>
+		<Row>
+			<PayrollID>2000052</PayrollID>
+			<StartDate>2019-03-01</StartDate>
+			<StartTime>00:00:00</StartTime>
+			<Duration>184.75</Duration>
+			<Shift>A</Shift>
+			<WorkCode>VA</WorkCode>
+		</Row>
+	</Rows>
+</Data>
