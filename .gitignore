@@ -1,6 +1,7 @@
 .env
 *.csv
 *.log
+*.xml
 Staffing01.xml
 Person01.xml
 psftp.scr
