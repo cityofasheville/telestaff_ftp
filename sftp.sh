@@ -26,10 +26,9 @@ mv Person.xml $personfilename
 
 # echo 'cd /DEV/WIM_OUT/' > psftp.scr
 echo 'cd /DEV/import/ongoing.unprocessed/' > psftp.scr
-echo 'get Staffing-12.xml' >> psftp.scr
-# echo 'put' $staffingfilename >> psftp.scr
-# echo 'put' $personfilename >> psftp.scr
-# echo 'close' >> psftp.scr
+echo 'put' $staffingfilename >> psftp.scr
+echo 'put' $personfilename >> psftp.scr
+echo 'close' >> psftp.scr
 
 "C:\Program Files\PuTTY\psftp.exe" -P 22 -l $ftp_user -pw $ftp_pw $ftp_url -b ".\psftp.scr" >> sftp.log
 # echo sftp $ftp_user@$ftp_url -b psftp.scr >> ftpcmd
