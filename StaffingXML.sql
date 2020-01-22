@@ -24,7 +24,7 @@ SELECT '<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>' + (
 	)),
 	CONVERT(XML, (	
 		SELECT 'Insert' AS "@Action", 'True' AS "@Optional", 
-    PayrollID, StartDate, '00:00:00' AS StartTime, Duration, WorkCode
+    	PayrollID, StartDate, '00:00:00' AS StartTime, Duration, WorkCode
 		FROM avl.telestaff_staffing01 
 		WHERE WorkCode IN ('VE','HE','SE') 
 		FOR XML PATH('Row')
