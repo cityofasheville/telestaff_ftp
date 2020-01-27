@@ -15,4 +15,5 @@ RUN npm install
 # Bundle app source
 COPY . .
 
-CMD [ "node", "clear_server_files.js" ]
+# CMD [ "node", "clear_server_files.js" ]
+CMD [ "node", "index.js" ]
