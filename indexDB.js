@@ -76,10 +76,11 @@ function loadAFile(fileObj){
                     connection.close();
                 });
                 request.on('row', function(columns) {
-                    fs.writeFileSync('tmp/' + xmlFile, columns[0].value);
+                    const dateString = (new Date()).toJSON().replace(/:/g,'-');
+                    fs.writeFileSync('tmp/' + dateString + xmlFile, columns[0].value); //datestring again
                 });
                 request.on('requestCompleted', function (rowCount, more, rows) { 
-                    resolve();;
+                    resolve();
                 });
                 connection.execSql(request);
             }
