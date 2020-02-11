@@ -1,6 +1,6 @@
 const Connection = require('tedious').Connection;
 const Request = require('tedious').Request;
-
+let FTPClient = require('ssh2-sftp-client');
 var fs = require('fs');
 
 require('dotenv').config({path:'./.env'})
@@ -35,7 +35,7 @@ const config = {
             host: process.env.ftp_host,
             username: process.env.ftp_user,
             password: process.env.ftp_pw,
-            path: process.env.ftp_path
+            path: process.env.ftp_import_path
     }
 }
 
@@ -76,11 +76,10 @@ function loadAFile(fileObj){
                     connection.close();
                 });
                 request.on('row', function(columns) {
-                    const dateString = (new Date()).toJSON().replace(/:/g,'-');
-                    fs.writeFileSync('tmp/' + dateString + xmlFile, columns[0].value); //datestring again
+                    fs.writeFileSync('tmp/' + xmlFile, columns[0].value);
                 });
                 request.on('requestCompleted', function (rowCount, more, rows) { 
-                    resolve();
+                    resolve(FtpStep(xmlFile));;
                 });
                 connection.execSql(request);
             }
@@ -89,42 +88,42 @@ function loadAFile(fileObj){
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
-// function FtpStep(fileToSend){
-//     return new Promise(function(resolve, reject) {
+function FtpStep(fileToSend){
+    return new Promise(function(resolve, reject) {
 
-//         logit("Sending to FTP: " + fileToSend); 
+        logit("Sending to SFTP: " + fileToSend); 
 
-//         const { host, username, password, path } = config.ftpConfig;
+        const { host, username, password, path } = config.ftpConfig;
         
-//         let readStream = fs.createReadStream('tmp/'+fileToSend);
-//         let sftp = new FTPClient();
-//         sftp.on('close', (sftpError) => {
-//         if(sftpError){
-//             logit(new Error("sftpError"));
-//         }
-//         });
-//         sftp.on('error', (err) => {
-//         logit("err2",err.level, err.description?err.description:'');
-//         logit(new Error(err, fileToSend));
-//         });
+        let readStream = fs.createReadStream('tmp/'+fileToSend);
+        let sftp = new FTPClient();
+        sftp.on('close', (sftpError) => {
+            if(sftpError){
+                logit(new Error("sftpError"));
+            }
+        });
+        sftp.on('error', (err) => {
+            logit("err2",err.level, err.description?err.description:'');
+            logit(new Error(err, fileToSend));
+        });
 
-//         sftp.connect({
-//             host,
-//             username,
-//             password
-//         }).then(() => {
-//             return sftp.put(readStream, path + config.dateString + fileToSend);
-//         }).then(res => {
-//             logit("Sent to SFTP", res);
-//             sftp.end();
-//             resolve(0);
-//         }).catch(err => {
-//         logit("err3");
-//         logit(err);
-//         sftp.end();
-//         });
-//     });
-// }
+        sftp.connect({
+            host,
+            username,
+            password
+        }).then(() => {
+            return sftp.put(readStream, path + config.dateString + fileToSend);
+        }).then(res => {
+            logit("Sent to SFTP", res);
+            sftp.end();
+            resolve(0);
+        }).catch(err => {
+        logit("err3");
+        logit(err);
+        sftp.end();
+        });
+    });
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 process.on('uncaughtException', (err)=>{
@@ -136,4 +135,3 @@ function logit(msg){
     logFile.write(msg + '\n');
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
-

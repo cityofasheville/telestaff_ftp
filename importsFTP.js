@@ -1,5 +1,4 @@
-const Connection = require('tedious').Connection;
-const Request = require('tedious').Request;
+
 let FTPClient = require('ssh2-sftp-client');
 var fs = require('fs');
 
@@ -35,7 +34,7 @@ const config = {
             host: process.env.ftp_host,
             username: process.env.ftp_user,
             password: process.env.ftp_pw,
-            path: process.env.ftp_path
+            path: process.env.ftp_import_path
     }
 }
 
@@ -44,7 +43,8 @@ let logFile = fs.createWriteStream('logfile.log');
 async function Run(){
     try {
         for (fileObj of config.filesToSend) {
-            await loadAFile(fileObj);
+            const { xmlFile } = fileObj;
+            await FtpStep(xmlFile)
         };
     } catch(err) {
         logit(err);
@@ -54,38 +54,38 @@ async function Run(){
 Run();
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
-function loadAFile(fileObj){
-    return new Promise(function(resolve, reject) {
-        const { sqlFile, xmlFile } = fileObj;
-        let sqlString = fs.readFileSync(sqlFile, "utf8");
-        const connection = new Connection(config.dbConfig);
-        connection.on('connect', function(err) {
-            if (err) {
-                logit(err);
-                reject(err);
-            } else {
-                logit('DB Connected');
-                const request = new Request(
-                    sqlString,
-                    function(err, rowCount, rows) {
-                    if (err) {
-                        logit(err);
-                    } else {
-                        logit('XML returned');
-                    }
-                    connection.close();
-                });
-                request.on('row', function(columns) {
-                    fs.writeFileSync('tmp/' + xmlFile, columns[0].value);
-                });
-                request.on('requestCompleted', function (rowCount, more, rows) { 
-                    resolve(FtpStep(xmlFile));;
-                });
-                connection.execSql(request);
-            }
-        });
-    });
-}
+// function loadAFile(fileObj){
+//     return new Promise(function(resolve, reject) {
+//         const { sqlFile, xmlFile } = fileObj;
+//         let sqlString = fs.readFileSync(sqlFile, "utf8");
+//         const connection = new Connection(config.dbConfig);
+//         connection.on('connect', function(err) {
+//             if (err) {
+//                 logit(err);
+//                 reject(err);
+//             } else {
+//                 logit('DB Connected');
+//                 const request = new Request(
+//                     sqlString,
+//                     function(err, rowCount, rows) {
+//                     if (err) {
+//                         logit(err);
+//                     } else {
+//                         logit('XML returned');
+//                     }
+//                     connection.close();
+//                 });
+//                 request.on('row', function(columns) {
+//                     fs.writeFileSync('tmp/' + xmlFile, columns[0].value);
+//                 });
+//                 request.on('requestCompleted', function (rowCount, more, rows) { 
+//                     resolve(FtpStep(xmlFile));;
+//                 });
+//                 connection.execSql(request);
+//             }
+//         });
+//     });
+// }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 function FtpStep(fileToSend){
@@ -114,7 +114,7 @@ function FtpStep(fileToSend){
         }).then(() => {
             return sftp.put(readStream, path + config.dateString + fileToSend);
         }).then(res => {
-            logit("Sent to SFTP", res);
+            logit("Sent to SFTP", path + config.dateString + fileToSend);
             sftp.end();
             resolve(0);
         }).catch(err => {
@@ -135,3 +135,4 @@ function logit(msg){
     logFile.write(msg + '\n');
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
+
