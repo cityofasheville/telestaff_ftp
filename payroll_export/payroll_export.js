@@ -68,12 +68,13 @@ function FtpStep(){
             return sftp.list(path);
         })
         .then(data => {
-            promiseList = [];
-            for(var i = 0; i < data.length; i++) {
-                const remoteFilename = path + data[i].name;
-                const localFilename = './tmp/' + data[i].name;
-                promiseList.push(sftp.fastGet(remoteFilename, localFilename));
-            }
+            filenameList = data.map(fileObj => fileObj.name);
+            promiseList = filenameList.map(async filenm => {
+                await sftp.fastGet(path + filenm, './tmp/' + filenm);
+                await sftp.delete(path + filenm);
+                return loadDB(filenm);
+            });
+
             Promise.all(promiseList)
             .then(() => {
                 sftp.end();
@@ -94,6 +95,7 @@ function FtpStep(){
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 function loadDB(fileObj){
+    return Promise.resolve(0);
     return new Promise(function(resolve, reject) {
         const { sqlFile, xmlFile } = fileObj;
         let sqlString = fs.readFileSync(sqlFile, "utf8");
