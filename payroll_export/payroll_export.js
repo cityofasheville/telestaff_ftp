@@ -2,8 +2,9 @@ const Connection = require('tedious').Connection;
 const Request = require('tedious').Request;
 let FTPClient = require('ssh2-sftp-client');
 var fs = require('fs');
+const path = require('path');
 
-require('dotenv').config({path:'../.env'})
+require('dotenv').config({path:'./.env'})
 const config = {
     dbConfig: {
         authentication: {
@@ -47,7 +48,6 @@ function FtpStep(){
 
         const { host, username, password, path } = config.ftpConfig;
         
-        // let writeStream = fs.createWriteStream('tmp/'+fileToRead);
         let sftp = new FTPClient();
         sftp.on('close', (sftpError) => {
             if(sftpError){
@@ -56,7 +56,7 @@ function FtpStep(){
         });
         sftp.on('error', (err) => {
             logit("err2",err.level, err.description?err.description:'');
-            logit(new Error(err, fileToSend));
+            logit(new Error(err));
         });
 
         sftp.connect({
@@ -68,22 +68,22 @@ function FtpStep(){
             return sftp.list(path);
         })
         .then(data => {
-            return new Promise((resolve, reject) => {
-                Promise.all(data.map(fileObj => {
-                    let writeStream = fs.createWriteStream('../tmp/' + fileObj.name);
-                    sftp.get(path + fileObj.name, writeStream)
-                    .then((wut)=>{console.log(wut)}); ///////////////////////// URHere?????
-                }))
-                .then((result) => { resolve(result); })
-                .catch(err => {
-                    reject(err.message);
-                });
+            promiseList = [];
+            for(var i = 0; i < data.length; i++) {
+                const remoteFilename = path + data[i].name;
+                const localFilename = './tmp/' + data[i].name;
+                promiseList.push(sftp.fastGet(remoteFilename, localFilename));
+            }
+            Promise.all(promiseList)
+            .then(() => {
+                sftp.end();
+                resolve(0);
+            })
+            .catch(err => {
+                logit("Error:", err);
+                sftp.end();
+                reject(err);
             });
-        })
-        .then(res => {
-            logit("Read from SFTP", res);
-            sftp.end();
-            resolve(0);
         })
         .catch(err => {
             logit("Error:", err);
@@ -127,7 +127,7 @@ function loadDB(fileObj){
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 process.on('uncaughtException', (err)=>{
-    logit(err);
+    logit("Uncaught error:",err);
 });
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 function logit(msg){
