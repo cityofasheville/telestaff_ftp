@@ -1,0 +1,22 @@
+0  payRangeFrom
+3  institutionAbbreviation
+29 from	
+30 through
+31 employeePayrollID
+34 employeeName?
+41 hours
+47 payrollCode
+48 rosterNote
+
+SELECT 'Telestaff'                   AS [source]
+      ,[institutionAbbreviation]     AS [group]
+      ,[employeePayrollID]          AS emp_id
+      ,[payrollCode]                     AS pay_code
+      ,[payRangeFrom]               AS date_worked
+      ,[hours]                               AS  hours_worked
+      ,[rosterNote]                       AS note
+      ,CAST(LEFT([from],19) as datetime)
+                                                AS date_time_from
+      ,CAST(LEFT([through],19) as datetime)
+                                                AS date_time_to
+  FROM [muntest].[avl].[TelestaffImport]

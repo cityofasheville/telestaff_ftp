@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/cityofasheville/telestaff_ftp#readme",
   "dependencies": {
+    "csv": "^5.3.1",
     "dotenv": "^8.2.0",
     "ssh2-sftp-client": "^5.0.1",
     "tedious": "^8.0.1"

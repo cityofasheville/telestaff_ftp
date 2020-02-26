@@ -1,10 +1,9 @@
-const Connection = require('tedious').Connection;
-const Request = require('tedious').Request;
-let FTPClient = require('ssh2-sftp-client');
-var fs = require('fs');
-const path = require('path');
 
-require('dotenv').config({path:'./.env'})
+
+var Connection = require('tedious').Connection,
+  TYPES = require('tedious').TYPES;
+
+  require('dotenv').config({path:'./.env'})
 const config = {
     dbConfig: {
         authentication: {
@@ -27,113 +26,41 @@ const config = {
             path: process.env.ftp_export_path
     }
 }
+var connection = new Connection(config.dbConfig);
 
-let logFile = fs.createWriteStream('logfile.log');
+const table = '[avl].[telestaff_import_time]';
+const filenm = './tmp/payroll-export--T20200219-I000-S1582131600505.csv';
+let rowSource = fs.createReadStream(filenm, "utf8");
 
-async function Run(){
-    try {
-        await FtpStep();
-    } catch(err) {
-        logit(err);
+function loadBulkData() {
+  var option = { keepNulls: true }; // option to honor null
+  var bulkLoad = connection.newBulkLoad(table, option, function(err, rowCont) {
+    if (err) {
+      throw err;
     }
+    console.log('rows inserted :', rowCont);
+    connection.close();
+  });
+  // setup columns
+  bulkLoad.addColumn('source', TYPES.VarChar, { length: 32, nullable: true });
+  bulkLoad.addColumn('group', TYPES.VarChar, { length: 32, nullable: true });
+  bulkLoad.addColumn('emp_id', TYPES.Int, { nullable: true });
+  bulkLoad.addColumn('pay_code', TYPES.Int, { nullable: true });
+  bulkLoad.addColumn('date_worked', TYPES.Date, { nullable: true });
+  bulkLoad.addColumn('hours_worked', TYPES.Decimal, { nullable: true });
+  bulkLoad.addColumn('note', TYPES.VarChar, { length: 128, nullable: true });
+  bulkLoad.addColumn('date_time_from', TYPES.DateTime, { nullable: true });
+  bulkLoad.addColumn('date_time_to', TYPES.DateTime, { nullable: true });
+
+  const rowStream = bulkLoad.getRowStream();
+  connection.execBulkLoad(bulkLoad);
+  rowSource.pipe(rowStream);
 }
 
-Run();
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////
-function FtpStep(){
-    return new Promise(function(resolve, reject) {
-
-        logit("Reading from SFTP: " + config.ftpConfig.username); 
-
-        const { host, username, password, path } = config.ftpConfig;
-        
-        let sftp = new FTPClient();
-        sftp.on('close', (sftpError) => {
-            if(sftpError){
-                logit(new Error("sftpError"));
-            }
-        });
-        sftp.on('error', (err) => {
-            logit("err2",err.level, err.description?err.description:'');
-            logit(new Error(err));
-        });
-
-        sftp.connect({
-            host,
-            username,
-            password
-        })
-        .then(() => {
-            return sftp.list(path);
-        })
-        .then(data => {
-            filenameList = data.map(fileObj => fileObj.name);
-            promiseList = filenameList.map(async filenm => {
-                await sftp.fastGet(path + filenm, './tmp/' + filenm);
-                await sftp.delete(path + filenm);
-                return loadDB(filenm);
-            });
-
-            Promise.all(promiseList)
-            .then(() => {
-                sftp.end();
-                resolve(0);
-            })
-            .catch(err => {
-                logit("Error:", err);
-                sftp.end();
-                reject(err);
-            });
-        })
-        .catch(err => {
-            logit("Error:", err);
-            sftp.end();
-        });
-    });
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////
-function loadDB(fileObj){
-    return Promise.resolve(0);
-    return new Promise(function(resolve, reject) {
-        const { sqlFile, xmlFile } = fileObj;
-        let sqlString = fs.readFileSync(sqlFile, "utf8");
-        const connection = new Connection(config.dbConfig);
-        connection.on('connect', function(err) {
-            if (err) {
-                logit(err);
-                reject(err);
-            } else {
-                logit('DB Connected');
-                const request = new Request(
-                    sqlString,
-                    function(err, rowCount, rows) {
-                    if (err) {
-                        logit(err);
-                    } else {
-                        logit('XML returned');
-                    }
-                    connection.close();
-                });
-                request.on('row', function(columns) {
-                    fs.writeFileSync('tmp/' + xmlFile, columns[0].value);
-                });
-                request.on('requestCompleted', function (rowCount, more, rows) { 
-                    resolve(FtpStep(xmlFile));;
-                });
-                connection.execSql(request);
-            }
-        });
-    });
-}
-///////////////////////////////////////////////////////////////////////////////////////////////////////
-process.on('uncaughtException', (err)=>{
-    logit("Uncaught error:",err);
+connection.on('connect', function(err) {
+  if (err) {
+    console.log('Connection Failed');
+    throw err;
+  }
+  loadBulkData();
 });
-///////////////////////////////////////////////////////////////////////////////////////////////////////
-function logit(msg){
-    console.log(msg);
-    logFile.write(msg + '\n');
-}
-///////////////////////////////////////////////////////////////////////////////////////////////////////
