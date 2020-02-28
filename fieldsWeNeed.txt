@@ -7,7 +7,7 @@
 41 hours
 47 payrollCode
 48 rosterNote
-
+-----------------------------------------------
 SELECT 'Telestaff'                   AS [source]
       ,[institutionAbbreviation]     AS [group]
       ,[employeePayrollID]          AS emp_id
@@ -20,3 +20,24 @@ SELECT 'Telestaff'                   AS [source]
       ,CAST(LEFT([through],19) as datetime)
                                                 AS date_time_to
   FROM [muntest].[avl].[TelestaffImport]
+-----------------------------------------------
+INSERT INTO [avl].[telestaff_import_time]
+           ([source]
+           ,[group]
+           ,[emp_id]
+           ,[pay_code]
+           ,[date_worked]
+           ,[hours_worked]
+           ,[note]
+           ,[date_time_from]
+           ,[date_time_to])
+     VALUES
+           (<source, varchar(32),>
+           ,<group, varchar(32),>
+           ,<emp_id, int,>
+           ,<pay_code, int,>
+           ,<date_worked, date,>
+           ,<hours_worked, decimal(18,0),>
+           ,<note, varchar(128),>
+           ,<date_time_from, datetime,>
+           ,<date_time_to, datetime,>)

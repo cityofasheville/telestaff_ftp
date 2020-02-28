@@ -75,7 +75,7 @@ function FtpStep(){
                 // await sftp.fastGet(path + filenm, './tmp/' + filenm);
                 // await sftp.delete(path + filenm);
                 // return loadDB('./tmp/' + filenm);
-                return loadDB('./tmp/payroll-export--T20200219-I000-S1582131600505.csv');
+                return loadDB('./tmp/payroll-export--T20200226-I000-S1582736400532.csv');
             });
 
             Promise.all(promiseList)

@@ -1,9 +1,8 @@
+var fs = require('fs');
+let Connection = require('tedious').Connection;
+let TYPES = require('tedious').TYPES;
 
-
-var Connection = require('tedious').Connection,
-  TYPES = require('tedious').TYPES;
-
-  require('dotenv').config({path:'./.env'})
+require('dotenv').config({path:'./.env'})
 const config = {
     dbConfig: {
         authentication: {
@@ -16,7 +15,8 @@ const config = {
         server: process.env.sql_host,
         options: {
             database: process.env.sql_db,  
-            encrypt: false
+            encrypt: false,
+            useUTC: false
         }
     },
     ftpConfig: {
@@ -29,8 +29,16 @@ const config = {
 var connection = new Connection(config.dbConfig);
 
 const table = '[avl].[telestaff_import_time]';
-const filenm = './tmp/payroll-export--T20200219-I000-S1582131600505.csv';
+const filenm = './payroll_export/output.csv';
 let rowSource = fs.createReadStream(filenm, "utf8");
+
+connection.on('connect', function(err) {
+  if (err) {
+    console.log('Connection Failed');
+    throw err;
+  }
+  loadBulkData();
+});
 
 function loadBulkData() {
   var option = { keepNulls: true }; // option to honor null
@@ -56,11 +64,3 @@ function loadBulkData() {
   connection.execBulkLoad(bulkLoad);
   rowSource.pipe(rowStream);
 }
-
-connection.on('connect', function(err) {
-  if (err) {
-    console.log('Connection Failed');
-    throw err;
-  }
-  loadBulkData();
-});
