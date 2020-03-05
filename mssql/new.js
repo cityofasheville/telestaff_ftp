@@ -86,42 +86,43 @@ connection.on('connect', function(err) {
       }
     }
   }))
+  .pipe(debugStream())
   .pipe(csv.transform (function(data, callback){
-        let retdata = [ 
-          data.source, 
-          data.group, 
-          data.emp_id, 
-          data.pay_code, 
-          data.date_worked, 
-          data.hours_worked, 
-          data.note, 
-          data.date_time_from, 
-          data.date_time_to 
-        ]
-        callback(null, retdata);
+      if(
+        typeof(data.source) === "string" && 
+        typeof(data.group) === "string" && 
+        typeof(data.emp_id) === "number" && 
+        typeof(data.pay_code) === "number" && !isNaN(data.pay_code) &&
+        !isNaN(data.date_worked) &&
+        typeof(data.hours_worked) === "number" && 
+        typeof(data.note) === "string" && 
+        !isNaN(data.date_time_from) &&
+        !isNaN(data.date_time_to)
+        //Object.prototype.toString.call(data.date_time_to) === '[object Date]' && 
+      ) {
+          let retdata = [ 
+            data.source, 
+            data.group, 
+            data.emp_id, 
+            data.pay_code, 
+            data.date_worked, 
+            data.hours_worked, 
+            data.note, 
+            data.date_time_from, 
+            data.date_time_to 
+          ]
+          callback(null, retdata);
+        } else {
+          callback(null, null);
+        }
+
   }, {
     parallel: 20
   }))
-  .pipe(debugStream())
   //.pipe(csv.stringify()).pipe(process.stdout)
   .pipe(rowStream);
 });
 
-
-////WRITABLE STREAM - Currently loads all data into memory, doesn't stream.///////////
-// var ws = new Stream({objectMode: true});
-// ws.writable = true;
-
-// ws.write = function(buf) {
-//   bulkLoad.addRow(buf);
-// }
-
-// ws.end = function(buf) {
-//    ws.writable = false;
-//    connection.execBulkLoad(bulkLoad);
-// }
-
-//REPLACE Writable with this???
 
 
   
