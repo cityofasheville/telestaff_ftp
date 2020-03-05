@@ -53,14 +53,14 @@ connection.on('connect', function(err) {
   });
   // setup columns
   bulkLoad.addColumn('source', TYPES.VarChar, { length: 32, nullable: true });
-  bulkLoad.addColumn('group', TYPES.VarChar, { length: 32, nullable: true });
-  bulkLoad.addColumn('emp_id', TYPES.Int, { nullable: true });
-  bulkLoad.addColumn('pay_code', TYPES.SmallInt, { nullable: true });
-  bulkLoad.addColumn('date_worked', TYPES.Date, { nullable: true });
-  bulkLoad.addColumn('hours_worked', TYPES.Decimal, { precision: 19, scale: 10, nullable: true });
-  bulkLoad.addColumn('note', TYPES.VarChar, { length: 128, nullable: true });
-  bulkLoad.addColumn('date_time_from', TYPES.DateTime, { nullable: true });
-  bulkLoad.addColumn('date_time_to', TYPES.DateTime, { nullable: true });
+  bulkLoad.addColumn('group', TYPES.VarChar, { length: 32, nullable: true, objName: 'institutionAbbreviation'  });
+  bulkLoad.addColumn('emp_id', TYPES.Int, { nullable: true, objName: 'employeePayrollID'  });
+  bulkLoad.addColumn('pay_code', TYPES.SmallInt, { nullable: true, objName: 'payrollCode'  });
+  bulkLoad.addColumn('date_worked', TYPES.Date, { nullable: true, objName: 'payRangeFrom'  });
+  bulkLoad.addColumn('hours_worked', TYPES.Decimal, { precision: 19, scale: 10, nullable: true, objName: 'hours'  });
+  bulkLoad.addColumn('note', TYPES.VarChar, { length: 128, nullable: true, objName: 'rosterNote'  });
+  bulkLoad.addColumn('date_time_from', TYPES.DateTime, { nullable: true, objName: 'from'  });
+  bulkLoad.addColumn('date_time_to', TYPES.DateTime, { nullable: true, objName: 'through'  });
 
   const rowStream = bulkLoad.getRowStream();
   connection.execBulkLoad(bulkLoad);
@@ -79,55 +79,55 @@ connection.on('connect', function(err) {
       } else if(context.column === 'from' || context.column === 'through') {
           let datestr = `${value.slice(0,19)}`
           return parse(datestr, "yyyy-MM-dd kk:mm:ss", new Date());
-      } else {
+      }else{
           return value;
       }
     }
   }))
-  .pipe(csv.transform (function(data){ // select columns
-    return { 
-      source: 'Telestaff',
-      group: data.institutionAbbreviation, 
-      emp_id: data.employeePayrollID,
-      pay_code: data.payrollCode,
-      date_worked: data.payRangeFrom,
-      hours_worked: data.hours,
-      note: data.rosterNote, 
-      date_time_from: data.from, 
-      date_time_to: data.through
-     } 
-  }))
+  // .pipe(csv.transform (function(data){ // select columns
+  //   return { 
+  //     source: 'Telestaff',
+  //     group: data.institutionAbbreviation, 
+  //     emp_id: data.employeePayrollID,
+  //     pay_code: data.payrollCode,
+  //     date_worked: data.payRangeFrom,
+  //     hours_worked: data.hours,
+  //     note: data.rosterNote, 
+  //     date_time_from: data.from, 
+  //     date_time_to: data.through
+  //    } 
+  // }))
   .pipe(debugStream())
   .pipe(csv.transform (function(data, callback){ //reject bad data
       if(
-        typeof(data.source) === "string" && 
-        typeof(data.group) === "string" && 
-        typeof(data.emp_id) === "number" && 
-        typeof(data.pay_code) === "number" && !isNaN(data.pay_code) &&
-        !isNaN(data.date_worked) &&
-        typeof(data.hours_worked) === "number" && 
-        typeof(data.note) === "string" && 
-        !isNaN(data.date_time_from) &&
-        !isNaN(data.date_time_to)
+        typeof(data.institutionAbbreviation) === "string" && 
+        typeof(data.employeePayrollID) === "number" && 
+        typeof(data.payrollCode) === "number" && !isNaN(data.pay_code) &&
+        !isNaN(data.payRangeFrom) &&
+        typeof(data.hours) === "number" && 
+        typeof(data.rosterNote) === "string" && 
+        !isNaN(data.from) &&
+        !isNaN(data.through)
         // Strings: typeof
         // Numbers: typeof but also check for NaN
-        // Dates: date-fns will return NaN if invalid date
+        // Dates: date-fns parse() will return NaN if invalid date
         //Object.prototype.toString.call(data.date_time_to) === '[object Date]' && 
       ) {
           let retdata = [ 
-            data.source, 
-            data.group, 
-            data.emp_id, 
-            data.pay_code, 
-            data.date_worked, 
-            data.hours_worked, 
-            data.note, 
-            data.date_time_from, 
-            data.date_time_to 
+            'Telestaff', 
+            data.institutionAbbreviation, 
+            data.employeePayrollID, 
+            data.payrollCode, 
+            data.payRangeFrom, 
+            data.hours, 
+            data.rosterNote, 
+            data.from, 
+            data.through 
           ]
           callback(null, retdata);
         } else {
-          callback(null, null);
+          console.log("bad data");
+          callback(null, null); // skip row
         }
 
   }, {
