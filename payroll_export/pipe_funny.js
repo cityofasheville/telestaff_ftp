@@ -6,10 +6,9 @@ let writeStream = fs.createWriteStream("output.csv");
 let firstLine = false;
 
 readStream
-// .pipe(stripBom())
 .pipe(csv.parse( {
     bom: true,
-    cast: true
+    // columns: true
 }))
 .pipe(csv.transform (function(data){
     if(firstLine === true) {

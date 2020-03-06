@@ -1,66 +1,103 @@
+const Connection = require('tedious').Connection;
+const Request = require('tedious').Request;
+const TYPES = require('tedious').TYPES;
+let FTPClient = require('ssh2-sftp-client');
 var fs = require('fs');
-let Connection = require('tedious').Connection;
-let TYPES = require('tedious').TYPES;
+const readline = require('readline');
+const path = require('path');
+const load_db = require('./load_db');
 
-require('dotenv').config({path:'./.env'})
+require('dotenv').config({path:'../.env'});
+
 const config = {
-    dbConfig: {
-        authentication: {
-            type: "default",
-            options: {
-                userName: process.env.sql_user, 
-                password: process.env.sql_pw, 
-            }
-        },
-        server: process.env.sql_host,
-        options: {
-            database: process.env.sql_db,  
-            encrypt: false,
-            useUTC: false
-        }
-    },
     ftpConfig: {
             host: process.env.ftp_host,
             username: process.env.ftp_user,
             password: process.env.ftp_pw,
-            path: process.env.ftp_export_path
+            remotepath: process.env.ftp_export_path
     }
 }
-var connection = new Connection(config.dbConfig);
 
-const table = '[avl].[telestaff_import_time]';
-const filenm = './payroll_export/output.csv';
-let rowSource = fs.createReadStream(filenm, "utf8");
+let logFile = fs.createWriteStream('logfile.log');
 
-connection.on('connect', function(err) {
-  if (err) {
-    console.log('Connection Failed');
-    throw err;
-  }
-  loadBulkData();
+async function Run(){
+    try {
+        await ftp_get();
+    } catch(err) {
+        logit(err);
+    }
+}
+
+Run();
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+function ftp_get(){
+    return new Promise(function(resolve, reject) {
+
+        const { host, username, password, remotepath } = config.ftpConfig;
+        const filelist = [];
+
+        logit("Reading from SFTP: " + config.ftpConfig.username); 
+
+        let sftp = new FTPClient();
+        sftp.on('close', (sftpError) => {
+            if(sftpError){
+                logit(new Error("sftpError"));
+            }
+        });
+        sftp.on('error', (err) => {
+            logit("err2",err.level, err.description?err.description:'');
+            logit(new Error(err));
+        });
+
+        sftp.connect({
+            host,
+            username,
+            password
+        })
+        .then(() => {
+            return sftp.list(remotepath);  // List files
+        })
+        .then(data => {
+            let filenameList = data.map( fileObj => fileObj.name );
+            let getPromises = filenameList.map(async filenm => {
+                filelist.push( filenm );
+                return await sftp.fastGet( remotepath + filenm, './tmp/' + filenm );   //Download each file
+            });
+            Promise.all(getPromises)
+            .then(async () => { // load_db loads database, returns successful list so remote files can be deleted
+                load_db( filelist )
+                .then(files_to_del => {
+                    let delPromises = files_to_del.map(filenm => {
+                        return sftp.delete( remotepath + filenm );
+                    })
+                    Promise.all(delPromises)
+                    .then(() => {
+                        sftp.end();
+                        resolve(0);
+                    });                
+                })                 
+            })
+            .catch(err => {
+                logit("Error:", err);
+                sftp.end();
+                reject(err);
+            });
+        })
+        .catch(err => {
+            logit("Error:", err);
+            sftp.end();
+        });
+    });
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+process.on('uncaughtException', (err)=>{
+    logit("Uncaught error:",err);
 });
-
-function loadBulkData() {
-  var option = { keepNulls: true }; // option to honor null
-  var bulkLoad = connection.newBulkLoad(table, option, function(err, rowCont) {
-    if (err) {
-      throw err;
-    }
-    console.log('rows inserted :', rowCont);
-    connection.close();
-  });
-  // setup columns
-  bulkLoad.addColumn('source', TYPES.VarChar, { length: 32, nullable: true });
-  bulkLoad.addColumn('group', TYPES.VarChar, { length: 32, nullable: true });
-  bulkLoad.addColumn('emp_id', TYPES.Int, { nullable: true });
-  bulkLoad.addColumn('pay_code', TYPES.Int, { nullable: true });
-  bulkLoad.addColumn('date_worked', TYPES.Date, { nullable: true });
-  bulkLoad.addColumn('hours_worked', TYPES.Decimal, { nullable: true });
-  bulkLoad.addColumn('note', TYPES.VarChar, { length: 128, nullable: true });
-  bulkLoad.addColumn('date_time_from', TYPES.DateTime, { nullable: true });
-  bulkLoad.addColumn('date_time_to', TYPES.DateTime, { nullable: true });
-
-  const rowStream = bulkLoad.getRowStream();
-  connection.execBulkLoad(bulkLoad);
-  rowSource.pipe(rowStream);
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+function logit(msg){
+    console.log(msg);
+    logFile.write(msg + '\n');
 }
+///////////////////////////////////////////////////////////////////////////////////////////////////////
