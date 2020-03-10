@@ -2,7 +2,9 @@ const debugStream = require('debug-stream')('new: ')
 const fs = require('fs');
 const csv = require('csv');
 const { parse } = require('date-fns');
-// const Stream = require('stream');
+
+const Logger = require('coa-node-logging');
+const logger = new Logger("Logger", 'logfile.log');
 
 const { Connection, Request, TYPES } = require('tedious');
 
@@ -21,51 +23,72 @@ const dbConfig = {
           encrypt: false
       }
 }
-
 const table = '[avl].[telestaff_import_time]';
-const filelist = [ 'payroll-export--T20200305-I000-S1583427600712.csv', 'payroll-export--T20200304-I000-S1583341200625.csv' ];
-load_db( filelist )
-.then(files_to_del => {
-  console.log('files_to_del',files_to_del);
-}, function onReject(err) {
-  console.log(err);
-});
+
+// Module test
+// const filelist = [ 'payroll-export--T20200305-I000-S1583427600712.csv', 'payroll-export--T20200304-I000-S1583341200625.csv' ];
+// load_db( filelist )
+// .then(files_to_del => {
+//   logger.error('files_to_del',files_to_del);
+// }, function onReject(err) {
+//   logger.error(err);
+// });
 
 function load_db( filelist ) {
   return new Promise(function(resolve, reject) {
-    clearTable();
+    clear_table();
     retnoerr = [];
     filelist.forEach((filenm) => {
       load_one_file(filenm)
       .then(file => {
         retnoerr.push(file);
       }, function onReject(err) {
-        console.log(err);
+        logger.error(err);
         reject(err);
       });
     });
+    run_stored_proc();
     resolve(retnoerr);
   });
 }
 
-function clearTable(){
+function clear_table(){
       //delete old rows from table
     const connection = new Connection(dbConfig);
     connection.on('connect', function(err) {
       if (err) {
-        console.log('Connection Failed');
+        logger.error('Connection Failed');
         reject(err);
       }
       request = new Request("delete from " + table, function(err, rowCount) {
         if (err) {
-          console.log(err);
+          logger.error(err);
         }
+        logger.info("Table Cleared");
         connection.close();
       });
       connection.execSql(request);
     });
 }
 
+function run_stored_proc(){
+  //run stored procedure on database
+const connection = new Connection(dbConfig);
+connection.on('connect', function(err) {
+  if (err) {
+    logger.error('Connection Failed');
+    reject(err);
+  }
+  request = new Request("exec [avl].[sptelestaff_insert_time]", function(err, rowCount) {
+    if (err) {
+      logger.error(err);
+    }
+    logger.info("Stored Procedure Run");
+    connection.close();
+  });
+  connection.execSql(request);
+});
+}
 function load_one_file( filenm ) {
   return new Promise(function(resolve, reject) {
     const rowSource = fs.createReadStream('./tmp/' + filenm, "utf8");
@@ -73,7 +96,7 @@ function load_one_file( filenm ) {
     const connection = new Connection(dbConfig);
     connection.on('connect', function(err) {
       if (err) {
-        console.log('Connection Failed');
+        logger.error('Connection Failed');
         reject(err);
       }
 
@@ -84,7 +107,7 @@ function load_one_file( filenm ) {
           connection.close();
           reject(err);
         }
-        console.log('rows inserted :', rowCont);
+        logger.info('Rows Inserted: ' + rowCont);
         connection.close();
       });
       // setup columns
@@ -176,6 +199,4 @@ function load_one_file( filenm ) {
   });
 }
 
-
-
-  
+module.exports = load_db;

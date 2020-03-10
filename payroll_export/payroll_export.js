@@ -1,17 +1,17 @@
 let FTPClient = require('ssh2-sftp-client');
 var fs = require('fs');
+const Logger = require('coa-node-logging');
+const logger = new Logger("Logger", 'logfile.log');
 
 const load_db = require('./load_db');
 
-require('dotenv').config({path:'./.env'});
+require('dotenv').config({path:'../.env'});
 
-const config = {
-    ftpConfig: {
-            host: process.env.ftp_host,
-            username: process.env.ftp_user,
-            password: process.env.ftp_pw,
-            remotepath: process.env.ftp_export_path
-    }
+const ftpConfig = {
+    host: process.env.ftp_host,
+    username: process.env.ftp_user,
+    password: process.env.ftp_pw,
+    remotepath: process.env.ftp_export_path
 }
 
 let logFile = fs.createWriteStream('logfile.log');
@@ -20,7 +20,7 @@ async function Run(){
     try {
         await ftp_get();
     } catch(err) {
-        logit(err);
+        logger.error(err);
     }
 }
 
@@ -30,20 +30,20 @@ Run();
 function ftp_get(){
     return new Promise(function(resolve, reject) {
 
-        const { host, username, password, remotepath } = config.ftpConfig;
+        const { host, username, password, remotepath } = ftpConfig;
         const filelist = [];
 
-        logit("Reading from SFTP: " + config.ftpConfig.username); 
+        logger.info("Reading from SFTP: " + ftpConfig.host); 
 
         let sftp = new FTPClient();
         sftp.on('close', (sftpError) => {
             if(sftpError){
-                logit(new Error("sftpError"));
+                logger.error(new Error("sftpError"));
             }
         });
         sftp.on('error', (err) => {
-            logit("err2",err.level, err.description?err.description:'');
-            logit(new Error(err));
+            logger.error("err2" + err.level + err.description?err.description:'');
+            logger.error(new Error(err));
         });
 
         sftp.connect({
@@ -58,11 +58,11 @@ function ftp_get(){
             let filenameList = data.map( fileObj => fileObj.name );
             let getPromises = filenameList.map(async filenm => {
                 filelist.push( filenm );
-                return await sftp.fastGet( remotepath + filenm, './payroll_export/tmp/' + filenm );   //Download each file
+                return await sftp.fastGet( remotepath + filenm, './tmp/' + filenm );   //Download each file
             });
             Promise.all(getPromises)
             .then(async () => { // load_db loads database, returns successful list so remote files can be deleted
-                console.log(filelist);
+                logger.info(filelist);
                 load_db( filelist )
                 .then(files_to_del => {
                     let delPromises = files_to_del.map(filenm => {
@@ -76,13 +76,13 @@ function ftp_get(){
                 })                 
             })
             .catch(err => {
-                logit("Error:", err);
+                logger.error("Error: " + err);
                 sftp.end();
                 reject(err);
             });
         })
         .catch(err => {
-            logit("Error:", err);
+            logger.error("Error: " + err);
             sftp.end();
         });
     });
@@ -90,11 +90,6 @@ function ftp_get(){
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 process.on('uncaughtException', (err)=>{
-    logit("Uncaught error:",err);
+    logger.error("Uncaught error:" + err);
 });
-///////////////////////////////////////////////////////////////////////////////////////////////////////
-function logit(msg){
-    console.log(msg);
-    logFile.write(msg + '\n');
-}
-///////////////////////////////////////////////////////////////////////////////////////////////////////
+
