@@ -1,13 +1,9 @@
-const Connection = require('tedious').Connection;
-const Request = require('tedious').Request;
-const TYPES = require('tedious').TYPES;
 let FTPClient = require('ssh2-sftp-client');
 var fs = require('fs');
-const readline = require('readline');
-const path = require('path');
+
 const load_db = require('./load_db');
 
-require('dotenv').config({path:'../.env'});
+require('dotenv').config({path:'./.env'});
 
 const config = {
     ftpConfig: {
@@ -62,10 +58,11 @@ function ftp_get(){
             let filenameList = data.map( fileObj => fileObj.name );
             let getPromises = filenameList.map(async filenm => {
                 filelist.push( filenm );
-                return await sftp.fastGet( remotepath + filenm, './tmp/' + filenm );   //Download each file
+                return await sftp.fastGet( remotepath + filenm, './payroll_export/tmp/' + filenm );   //Download each file
             });
             Promise.all(getPromises)
             .then(async () => { // load_db loads database, returns successful list so remote files can be deleted
+                console.log(filelist);
                 load_db( filelist )
                 .then(files_to_del => {
                     let delPromises = files_to_del.map(filenm => {

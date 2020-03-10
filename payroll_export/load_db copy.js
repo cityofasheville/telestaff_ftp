@@ -1,48 +1,83 @@
-    var debugStream = require('debug-stream')('new: ')
-    var fs = require('fs');
-    const csv = require('csv');
-    const { parse } = require('date-fns');
+const debugStream = require('debug-stream')('new: ')
+const fs = require('fs');
+const csv = require('csv');
+const { parse } = require('date-fns');
+// const Stream = require('stream');
 
-    var Connection = require('tedious').Connection,
-    TYPES = require('tedious').TYPES;
+const { Connection, Request, TYPES } = require('tedious');
 
-    require('dotenv').config({path:'../.env'})
-    const config = {
-        dbConfig: {
-            authentication: {
-                type: "default",
-                options: {
-                    userName: process.env.sql_user, 
-                    password: process.env.sql_pw, 
-                }
-            },
-            server: process.env.sql_host,
-            options: {
-                database: process.env.sql_db,  
-                encrypt: false
-            }
-        }
-    }
+require('dotenv').config({path:'../.env'})
+const dbConfig = {
+      authentication: {
+          type: "default",
+          options: {
+              userName: process.env.sql_user, 
+              password: process.env.sql_pw, 
+          }
+      },
+      server: process.env.sql_host,
+      options: {
+          database: process.env.sql_db,  
+          encrypt: false
+      }
+}
+const table = '[avl].[telestaff_import_time]';
 
-    const table = '[avl].[telestaff_import_time]';
-    const filenm = '../payroll_export/output.csv';
-    const rowSource = fs.createReadStream(filenm, "utf8");
+//TEST MODULE
+const filelist = [ 'payroll-export--T20200305-I000-S1583427600712.csv', 'payroll-export--T20200304-I000-S1583341200625.csv' ];
+load_db( filelist )
+.then(files_to_del => {
+  console.log('files_to_del',files_to_del);
+}, function onReject(err) {
+  console.log(err);
+});
 
-    // connect to db
-    const connection = new Connection(config.dbConfig);
+function load_db( filelist ) {
+  return new Promise(function(resolve, reject) {
+    retnoerr = [];
+    const connection = new Connection(dbConfig);
     connection.on('connect', function(err) {
-    if (err) {
-        console.log('Connection Failed');
-        throw err;
-    }
-    var option = { keepNulls: true }; // bulkLoad options
-    var bulkLoad = connection.newBulkLoad(table, option, function(err, rowCont) {
         if (err) {
-        connection.close();
-        throw err;
+          console.log('Connection Failed');
+          reject(err);
         }
-        console.log('rows inserted :', rowCont);
-        connection.close();
+      clearTable(connection);
+      filelist.forEach((filenm) => {
+        load_one_file(connection, filenm)
+        .then(file => {
+          retnoerr.push(file);
+        }, function onReject(err) {
+          console.log(err);
+          reject(err);
+        });
+      });
+    });
+    connection.close();
+    resolve(retnoerr);
+  });
+}
+
+function clearTable(connection){
+  //delete old rows from table
+  request = new Request("delete from " + table, function(err) {
+    if (err) {
+      console.log(err);
+    }
+  });
+  connection.execSql(request);
+}
+
+function load_one_file( connection, filenm ) {
+  return new Promise(function(resolve, reject) {
+    const rowSource = fs.createReadStream('./tmp/' + filenm, "utf8");
+
+    // bulkLoad
+    var option = { keepNulls: true }; 
+    var bulkLoad = connection.newBulkLoad(table, option, function(err, rowCont) {
+      if (err) {
+        reject(err);
+      }
+      console.log('rows inserted :', rowCont);
     });
     // setup columns
     bulkLoad.addColumn('source', TYPES.VarChar, { length: 32, nullable: true });
@@ -75,7 +110,7 @@
         } else {
             return value;
         }
-        }
+      }
     }))
     .pipe(csv.transform (function(data){ // choose and rename columns
       return { 
@@ -88,7 +123,7 @@
         note: data.rosterNote, 
         date_time_from: data.from, 
         date_time_to: data.through
-       } 
+      } 
     }))
     .pipe(debugStream())
     .pipe(csv.transform (function(data, callback){ //reject bad data
@@ -122,14 +157,16 @@
           } else {
             callback(null, null);
           }
-  
+
     }, {
       parallel: 20
     }))
     // .pipe(csv.stringify()).pipe(process.stdout)
     .pipe(rowStream);
-});
+    resolve(filenm);
+  });
+}
 
 
 
-    
+  
