@@ -8,8 +8,8 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "test",
-            "program": "${workspaceFolder}/test.js",
+            "name": "payroll_export",
+            "program": "${workspaceFolder}/payroll_export/payroll_export.js",
             "skipFiles": [
                 "<node_internals>/**"
             ]
@@ -17,11 +17,20 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "payroll_export_lilstream",
+            "name": "test",
+            "program": "${workspaceFolder}/payroll_export/test.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "load_db",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/payroll_export/payroll_export_lilstream.js"
+            "program": "${workspaceFolder}/payroll_export/load_db.js"
         }
     ]
 }
