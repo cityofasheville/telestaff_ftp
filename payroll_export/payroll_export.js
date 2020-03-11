@@ -5,7 +5,7 @@ const logger = new Logger("Logger", 'logfile.log');
 
 const load_db = require('./load_db');
 
-require('dotenv').config({path:'../.env'});
+require('dotenv').config({path:'./.env'});
 
 const ftpConfig = {
     host: process.env.ftp_host,

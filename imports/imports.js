@@ -1,5 +1,4 @@
-const Connection = require('tedious').Connection;
-const Request = require('tedious').Request;
+const { Connection, Request } = require('tedious');
 let FTPClient = require('ssh2-sftp-client');
 var fs = require('fs');
 

@@ -8,7 +8,7 @@ const logger = new Logger("Logger", 'logfile.log');
 
 const { Connection, Request, TYPES } = require('tedious');
 
-require('dotenv').config({path:'../.env'})
+require('dotenv').config({path:'./.env'})
 const dbConfig = {
       authentication: {
           type: "default",
