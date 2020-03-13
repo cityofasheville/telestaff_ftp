@@ -14,8 +14,6 @@ const ftpConfig = {
     remotepath: process.env.ftp_export_path
 }
 
-let logFile = fs.createWriteStream('logfile.log');
-
 async function Run(){
     try {
         await ftp_get();
@@ -23,8 +21,13 @@ async function Run(){
         logger.error(err);
     }
 }
-
-Run();
+if (require.main === module) { //call directly
+    Run();
+} else {
+    exports.handler = async event =>  // run as Lambda
+    await Run();
+}
+// 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 function ftp_get(){
@@ -61,9 +64,9 @@ function ftp_get(){
                 return await sftp.fastGet( remotepath + filenm, './tmp/' + filenm );   //Download each file
             });
             Promise.all(getPromises)
-            .then(async () => { // load_db loads database, returns successful list so remote files can be deleted
+            .then(async () => { 
                 logger.info(filelist);
-                load_db( filelist )
+                load_db( filelist ) // <-- load_db loads database, returns successful list so remote files can be deleted
                 .then(files_to_del => {
                     let delPromises = files_to_del.map(filenm => {
                         return sftp.delete( remotepath + filenm );
