@@ -3,4 +3,6 @@ node_modules/
 *.csv
 *.log
 *.xml
+*.zip
 .DS_Store
+deploy.sh

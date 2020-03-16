@@ -1,9 +1,6 @@
-const { Connection, Request } = require('tedious');
+
 let FTPClient = require('ssh2-sftp-client');
 var fs = require('fs');
-
-const Logger = require('coa-node-logging');
-const logger = new Logger("Logger", 'logfile.log');
 
 require('dotenv').config({path:'./.env'})
 const dateString = (new Date()).toJSON().replace(/:/g,'-');
@@ -41,70 +38,73 @@ const config = {
     }
 }
 
+let logFile = fs.createWriteStream('logfile.log');
+
 async function Run(){
     try {
         for (fileObj of config.filesToSend) {
-            await loadAFile(fileObj);
+            const { xmlFile } = fileObj;
+            await FtpStep(xmlFile)
         };
     } catch(err) {
-        logger.error(err);
+        logit(err);
     }
 }
 
 Run();
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
-function loadAFile(fileObj){
-    return new Promise(function(resolve, reject) {
-        const { sqlFile, xmlFile } = fileObj;
-        let sqlString = fs.readFileSync(sqlFile, "utf8");
-        const connection = new Connection(config.dbConfig);
-        connection.on('connect', function(err) {
-            if (err) {
-                logger.error(err);
-                reject(err);
-            } else {
-                logger.info('DB Connected');
-                const request = new Request(
-                    sqlString,
-                    function(err, rowCount, rows) {
-                    if (err) {
-                        logger.error(err);
-                    } else {
-                        logger.info('XML returned');
-                    }
-                    connection.close();
-                });
-                request.on('row', function(columns) {
-                    fs.writeFileSync('tmp/' + xmlFile, columns[0].value);
-                });
-                request.on('requestCompleted', function (rowCount, more, rows) { 
-                    resolve(FtpStep(xmlFile));;
-                });
-                connection.execSql(request);
-            }
-        });
-    });
-}
+// function loadAFile(fileObj){
+//     return new Promise(function(resolve, reject) {
+//         const { sqlFile, xmlFile } = fileObj;
+//         let sqlString = fs.readFileSync(sqlFile, "utf8");
+//         const connection = new Connection(config.dbConfig);
+//         connection.on('connect', function(err) {
+//             if (err) {
+//                 logit(err);
+//                 reject(err);
+//             } else {
+//                 logit('DB Connected');
+//                 const request = new Request(
+//                     sqlString,
+//                     function(err, rowCount, rows) {
+//                     if (err) {
+//                         logit(err);
+//                     } else {
+//                         logit('XML returned');
+//                     }
+//                     connection.close();
+//                 });
+//                 request.on('row', function(columns) {
+//                     fs.writeFileSync('tmp/' + xmlFile, columns[0].value);
+//                 });
+//                 request.on('requestCompleted', function (rowCount, more, rows) { 
+//                     resolve(FtpStep(xmlFile));;
+//                 });
+//                 connection.execSql(request);
+//             }
+//         });
+//     });
+// }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 function FtpStep(fileToSend){
     return new Promise(function(resolve, reject) {
 
-        logger.info("Sending to SFTP: " + fileToSend); 
+        logit("Sending to SFTP: " + fileToSend); 
 
         const { host, username, password, path } = config.ftpConfig;
         
         let readStream = fs.createReadStream('tmp/'+fileToSend);
         let sftp = new FTPClient();
         sftp.on('close', (sftpError) => {
-            if(sftpError){
-                logger.error(new Error("sftpError"));
-            }
+        if(sftpError){
+            logit(new Error("sftpError"));
+        }
         });
         sftp.on('error', (err) => {
-            logger.error("err2" + err.level + err.description?err.description:'');
-            logger.error(new Error(err, fileToSend));
+        logit("err2",err.level, err.description?err.description:'');
+        logit(new Error(err, fileToSend));
         });
 
         sftp.connect({
@@ -114,12 +114,12 @@ function FtpStep(fileToSend){
         }).then(() => {
             return sftp.put(readStream, path + config.dateString + fileToSend);
         }).then(res => {
-            logger.info("Sent to SFTP" + res);
+            logit("Sent to SFTP", path + config.dateString + fileToSend);
             sftp.end();
             resolve(0);
         }).catch(err => {
-        logger.error("err3");
-        logger.error(err);
+        logit("err3");
+        logit(err);
         sftp.end();
         });
     });
@@ -127,7 +127,12 @@ function FtpStep(fileToSend){
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 process.on('uncaughtException', (err)=>{
-    logger.error(err);
+    logit(err);
 });
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+function logit(msg){
+    console.log(msg);
+    logFile.write(msg + '\n');
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
