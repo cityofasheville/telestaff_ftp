@@ -5,7 +5,7 @@ const { parse } = require('date-fns');
 
 const { Connection, Request, TYPES } = require('tedious');
 
-// require('dotenv').config({path:'./.env'})
+require('dotenv').config({path:'./.env'})
 const dbConfig = {
       authentication: {
           type: "default",
@@ -72,25 +72,26 @@ function clear_table(){
 }
 
 function run_stored_proc(){
-  //run stored procedure on database
-const connection = new Connection(dbConfig);
-connection.on('connect', function(err) {
-  if (err) {
-    console.error('Connection Failed2');
-  }
-  request = new Request("exec [avl].[sptelestaff_insert_time]", function(err, rowCount) {
-    if (err) {
-      console.error(err);
-    }
-    console.log("Stored Procedure Run");
-    connection.close();
-  });
-  connection.execSql(request);
-});
+    //run stored procedure on database
+    const connection = new Connection(dbConfig);
+    connection.on('connect', function(err) {
+      if (err) {
+        console.error('Connection Failed2');
+      }
+      request = new Request("exec [avl].[sptelestaff_insert_time]", function(err, rowCount) {
+        if (err) {
+          console.error(err);
+        }
+        console.log("Stored Procedure Run");
+        connection.close();
+      });
+      connection.execSql(request);
+    });
 }
+
 function load_one_file( filenm ) {
   return new Promise(function(resolve, reject) {
-    const rowSource = fs.createReadStream('/tmp/' + filenm, "utf8");
+    const rowSource = fs.createReadStream('tmp/' + filenm, "utf8");
 
     const connection = new Connection(dbConfig);
     connection.on('connect', function(err) {

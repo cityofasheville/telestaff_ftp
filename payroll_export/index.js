@@ -1,11 +1,9 @@
 let FTPClient = require('ssh2-sftp-client');
 var fs = require('fs');
-const Logger = require('coa-node-logging');
-const logger = new Logger("Logger", 'logfile.log');
 
 const load_db = require('./load_db');
 
-require('dotenv').config({path:'./.env'});
+// require('dotenv').config({path:'./.env'});
 
 const ftpConfig = {
     host: process.env.ftp_host,
@@ -18,17 +16,18 @@ async function Run(){
     try {
         await ftp_get();
     } catch(err) {
-        logger.error(err);
+        console.error(err);
     }
 }
-if (require.main === module) { //call directly
-    Run();
-} else {
-    exports.handler = async event =>  // run as Lambda
-    await Run();
-}
+// if (require.main === module) { //call directly
+//     Run();
+// } else {
+//     exports.handler = async event =>  // run as Lambda
+//     await Run();
+// }
 // 
-
+exports.handler = async event => await
+     Run();
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 function ftp_get(){
     return new Promise(function(resolve, reject) {
@@ -36,17 +35,17 @@ function ftp_get(){
         const { host, username, password, remotepath } = ftpConfig;
         const filelist = [];
 
-        logger.info("Reading from SFTP: " + ftpConfig.host); 
+        console.log("FTP"); 
 
         let sftp = new FTPClient();
         sftp.on('close', (sftpError) => {
             if(sftpError){
-                logger.error(new Error("sftpError"));
+                console.error(new Error("sftpError"));
             }
         });
         sftp.on('error', (err) => {
-            logger.error("err2" + err.level + err.description?err.description:'');
-            logger.error(new Error(err));
+            console.error("err2" + err.level + err.description?err.description:'');
+            console.error(new Error(err));
         });
 
         sftp.connect({
@@ -60,12 +59,13 @@ function ftp_get(){
         .then(data => {
             let filenameList = data.map( fileObj => fileObj.name );
             let getPromises = filenameList.map(async filenm => {
+                console.log("Reading from FTP: " + filenm); 
                 filelist.push( filenm );
-                return await sftp.fastGet( remotepath + filenm, './tmp/' + filenm );   //Download each file
+                await sftp.get( remotepath + filenm, '/tmp/' + filenm );   //Download each file
             });
             Promise.all(getPromises)
-            .then(async () => { 
-                logger.info(filelist);
+            .then(async (p) => { 
+                console.log(filelist);
                 load_db( filelist ) // <-- load_db loads database, returns successful list so remote files can be deleted
                 .then(files_to_del => {
                     let delPromises = files_to_del.map(filenm => {
@@ -79,13 +79,13 @@ function ftp_get(){
                 })                 
             })
             .catch(err => {
-                logger.error("Error: " + err);
+                console.error("Error: " + err);
                 sftp.end();
                 reject(err);
             });
         })
         .catch(err => {
-            logger.error("Error: " + err);
+            console.error("Error: " + err);
             sftp.end();
         });
     });
@@ -93,6 +93,6 @@ function ftp_get(){
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 process.on('uncaughtException', (err)=>{
-    logger.error("Uncaught error:" + err);
+    console.error("Uncaught error:" + err);
 });
 
