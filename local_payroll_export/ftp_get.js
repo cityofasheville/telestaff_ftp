@@ -15,6 +15,7 @@ function ftp_get() {
             return sftp.list(remotepath); // list files
         })
         .then(data => {
+            if(!data || data.length === 0) {  reject("No files on FTP") };
             let filenameList = data.map( fileObj => fileObj.name );
             let getPromises = filenameList.map(async filenm => {
                 console.log("Reading from FTP: " + filenm); 

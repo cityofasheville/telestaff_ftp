@@ -23,7 +23,14 @@
     "date-fns": "^2.10.0",
     "debug-stream": "^3.0.1",
     "dotenv": "^8.2.0",
+    "duplex": "^1.0.0",
+    "mssql": "^6.2.0",
     "ssh2-sftp-client": "^5.0.1",
     "tedious": "^8.0.1"
+  },
+  "devDependencies": {
+    "eslint": "^6.8.0",
+    "eslint-config-airbnb-base": "^14.1.0",
+    "eslint-plugin-import": "^2.20.1"
   }
 }
