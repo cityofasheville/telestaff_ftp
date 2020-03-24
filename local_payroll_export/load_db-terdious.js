@@ -137,10 +137,10 @@ function load_one_file( filenm ) {
       connection.execBulkLoad(bulkLoad);
 
       rowSource
-      .pipe(csv.parse({
+      .pipe(csv.parse({ // parse takes buffers and returns objects
         bom: true,
         columns: true,
-        cast: function(value, context){ // correct data types
+        cast: function(value, context){ // correct the data types
           if(context.column === "hours") {
               return parseFloat(value);
           } else if(context.column === "employeePayrollID" || context.column === 'payrollCode') {
@@ -204,7 +204,7 @@ function load_one_file( filenm ) {
       }, {
         parallel: 20
       }))
-      // .pipe(csv.stringify()).pipe(process.stdout)
+      // 
       .pipe(rowStream);
     });
     resolve(filenm);

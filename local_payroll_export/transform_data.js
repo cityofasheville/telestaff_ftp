@@ -1,18 +1,11 @@
 const debugStream = require('debug-stream')('new: ')
 const fs = require('fs');
 const csv = require('csv');
+const { parse } = require('date-fns');
 
-// Module test
-const rowSource = fs.createReadStream('tmp/payroll-export--T20200305-I000-S1583427600712.csv', "utf8");
-transform_data( rowSource )
-.then(transformed => {
-  console.log('files_to_del',files_to_del);
-}, function onReject(err) {
-  console.error(err);
-});
-// module.exports = load_db;
 
-async function transform_data(rowSource) {
+
+const transform_data = async function (rowSource) {
     rowSource
     .pipe(csv.parse({
       bom: true,
@@ -80,10 +73,18 @@ async function transform_data(rowSource) {
 
     }, {
       parallel: 20
-    }))
-    // .pipe(csv.stringify()).pipe(process.stdout)
-    .pipe(rowStream);
+    }));
+    // .pipe(csv.stringify()).pipe(return)
+    // .pipe(rowStream);
 
 }
 
-module.exports = transform_data;
+// module.exports = transform_data;
+// Module test
+const rowSource = fs.createReadStream('tmp/payroll-export--T20200305-I000-S1583427600712.csv', "utf8");
+transform_data( rowSource )
+.then(files_to_del => {
+  console.log('files_to_del',files_to_del);
+}, function onReject(err) {
+  console.error(err);
+});
