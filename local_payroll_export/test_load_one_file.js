@@ -10,13 +10,17 @@ const config = {
     options: { enableArithAbort: true }
 }
 
-const filenm = 'payroll-export--T20200305-I000-S1583427600712.csv';
+const filenm = 'fourteen.csv';
 
 const run = async ()=>{
-    let pool = await sql.connect(config);
+    try {
+        let pool = await sql.connect(config);
 
-    let file = await load_one_file(filenm, pool);
+        let file = await load_one_file(filenm, pool);
 
-    console.log(file);
+        console.log(file);
+    } catch(err) {
+        console.error(err);
+    }
 }
 run();
