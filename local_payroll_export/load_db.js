@@ -1,7 +1,7 @@
 const sql = require('mssql');
-require('dotenv').config({path:'./.env'})
+const load_one_file = require('./load_one_file');
 
-const table = '[avl].[telestaff_import_time]';
+require('dotenv').config({path:'./.env'})
 
 // Module test
 const filelist = [ 'payroll-export--T20200305-I000-S1583427600712.csv', 'payroll-export--T20200304-I000-S1583341200625.csv' ];
@@ -42,7 +42,7 @@ async function load_db( filelist ) {
 async function clear_table(pool) { // delete old rows from table
 	try {
 		await pool.request()
-		.query(`DELETE FROM ${table}`);
+		.query('DELETE FROM [avl].[telestaff_import_time]');
 		console.log("Table Cleared");
 	} catch(err) {
 		throw new Error(err);
@@ -59,9 +59,9 @@ async function run_stored_proc(pool) {
 	}
 }
 
-async function load_one_file( filenm, pool ) {
-	return new Promise(function(resolve, reject) {
-		console.log('loading', filenm)
-		resolve(filenm);
-	});
-}
+// async function load_one_file( filenm, pool ) {
+// 	return new Promise(function(resolve, reject) {
+// 		console.log('loading', filenm)
+// 		resolve(filenm);
+// 	});
+// }
