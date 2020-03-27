@@ -47,7 +47,9 @@ async function load_one_file(filenm, pool) {
     table.columns.add('date_time_from', sql.DateTime, { nullable: true });
     table.columns.add('date_time_to', sql.DateTime, { nullable: true });
 
-    request.bulk(table);
+    if(table.rows > 0) request.bulk(table);
+
+    return filenm;
   } catch(err) {
     throw new Error(err);
   }

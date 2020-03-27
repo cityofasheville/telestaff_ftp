@@ -3,7 +3,7 @@ const {
     fix_data_types,
     choose_columns,
     filter_bad_data
-} = require('./transform_data');
+} = require('../transform_data');
 
 
 const fs = require('fs');

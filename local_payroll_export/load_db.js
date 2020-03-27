@@ -4,7 +4,7 @@ const load_one_file = require('./load_one_file');
 require('dotenv').config({path:'./.env'})
 
 // Module test
-const filelist = [ 'payroll-export--T20200305-I000-S1583427600712.csv', 'payroll-export--T20200304-I000-S1583341200625.csv' ];
+const filelist = [ 'payroll-export--T20200305-I000-S1583427600712.csv' ]; //, 'payroll-export--T20200227-I000-S1582822800661.csv' ];
 load_db( filelist )
 .then(files_to_del => {
   console.log('files_to_del',files_to_del);
@@ -25,16 +25,19 @@ async function load_db( filelist ) {
 	try {
 		let pool = await sql.connect(config);
 		await clear_table(pool);
-
-		Promise.all(filelist.map(async (filenm) => {
-			let file = await load_one_file(filenm, pool)
+		for( filenm of filelist) {
+			let file = await load_one_file(filenm, pool);
 			retnoerr.push(file);
-		}));
+		};
+		// Promise.all(filelist.map(async (filenm) => {
+		// 	let file = await load_one_file(filenm, pool);
+		// 	retnoerr.push(file);
+		// }));
 		await run_stored_proc(pool);
 		pool.close();
 		return retnoerr;
 	} catch (err) {
-		pool.close();
+		// pool.close();
 		throw new Error(err); //in async fn, this is like a reject
 	}
 }

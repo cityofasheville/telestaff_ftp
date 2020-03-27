@@ -64,6 +64,16 @@ const filter_bad_data = csv.transform (function(data, callback){ //reject bad da
       ]
       callback(null, retdata);
     } else {
+      console.log('Rejected data: ',        
+      data.source, 
+      data.group, 
+      data.emp_id, 
+      data.pay_code, 
+      data.date_worked, 
+      data.hours_worked, 
+      data.note, 
+      data.date_time_from, 
+      data.date_time_to);
       callback(null, null);
     }
 

@@ -1,5 +1,5 @@
 const sql = require('mssql');
-const load_one_file = require('./load_one_file');
+const load_one_file = require('../load_one_file');
 require('dotenv').config({path:'./.env'});
 
 const config = {
