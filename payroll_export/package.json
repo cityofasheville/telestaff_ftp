@@ -18,7 +18,6 @@
   },
   "homepage": "https://github.com/cityofasheville/telestaff_ftp#readme",
   "dependencies": {
-    "coa-node-logging": "^3.0.0",
     "csv": "^5.3.1",
     "date-fns": "^2.10.0",
     "debug-stream": "^3.0.1",

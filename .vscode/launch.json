@@ -2,16 +2,29 @@
     // Use IntelliSense to learn about possible attributes.
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    // JONNOTES!! "cwd": "${fileDirname}", makes working dir same as program. Intellisense: Ctrl Space
     "version": "0.2.0",
     "configurations": [
         {
             "type": "node",
             "request": "launch",
-            "name": "local_payroll_export",
+            "name": "load_db",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/local_payroll_export/index.js"
+            "program": "${workspaceFolder}/local_payroll_export/load_db.js",
+            "cwd": "${fileDirname}",
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "streamycall",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/local_payroll_export/streamycall.js",
+            "cwd": "${fileDirname}",
+
         }
     ]
 }
