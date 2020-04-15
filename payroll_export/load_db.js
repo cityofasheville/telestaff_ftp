@@ -1,10 +1,6 @@
-const debugStream = require('debug-stream')('new: ')
 const fs = require('fs');
 const csv = require('csv');
 const { parse } = require('date-fns');
-
-const Logger = require('coa-node-logging');
-const logger = new Logger("Logger", 'logfile.log');
 
 const { Connection, Request, TYPES } = require('tedious');
 
@@ -20,7 +16,8 @@ const dbConfig = {
       server: process.env.sql_host,
       options: {
           database: process.env.sql_db,  
-          encrypt: false
+          encrypt: false,
+          trustServerCertificate: false
       }
 }
 const table = '[avl].[telestaff_import_time]';
@@ -29,9 +26,9 @@ const table = '[avl].[telestaff_import_time]';
 // const filelist = [ 'payroll-export--T20200305-I000-S1583427600712.csv', 'payroll-export--T20200304-I000-S1583341200625.csv' ];
 // load_db( filelist )
 // .then(files_to_del => {
-//   logger.error('files_to_del',files_to_del);
+//   console.error('files_to_del',files_to_del);
 // }, function onReject(err) {
-//   logger.error(err);
+//   console.error(err);
 // });
 
 function load_db( filelist ) {
@@ -43,7 +40,7 @@ function load_db( filelist ) {
       .then(file => {
         retnoerr.push(file);
       }, function onReject(err) {
-        logger.error(err);
+        console.error(err);
         reject(err);
       });
     });
@@ -57,14 +54,14 @@ function clear_table(){
     const connection = new Connection(dbConfig);
     connection.on('connect', function(err) {
       if (err) {
-        logger.error('Connection Failed');
+        console.error('Connection Failed');
         reject(err);
       }
       request = new Request("delete from " + table, function(err, rowCount) {
         if (err) {
-          logger.error(err);
+          console.error(err);
         }
-        logger.info("Table Cleared");
+        console.log("Table Cleared");
         connection.close();
       });
       connection.execSql(request);
@@ -76,14 +73,14 @@ function run_stored_proc(){
 const connection = new Connection(dbConfig);
 connection.on('connect', function(err) {
   if (err) {
-    logger.error('Connection Failed');
+    console.error('Connection Failed');
     reject(err);
   }
   request = new Request("exec [avl].[sptelestaff_insert_time]", function(err, rowCount) {
     if (err) {
-      logger.error(err);
+      console.error(err);
     }
-    logger.info("Stored Procedure Run");
+    console.log("Stored Procedure Run");
     connection.close();
   });
   connection.execSql(request);
@@ -96,7 +93,7 @@ function load_one_file( filenm ) {
     const connection = new Connection(dbConfig);
     connection.on('connect', function(err) {
       if (err) {
-        logger.error('Connection Failed');
+        console.error('Connection Failed');
         reject(err);
       }
 
@@ -107,7 +104,7 @@ function load_one_file( filenm ) {
           connection.close();
           reject(err);
         }
-        logger.info('Rows Inserted: ' + rowCont);
+        console.log('Rows Inserted: ' + rowCont);
         connection.close();
       });
       // setup columns
@@ -156,7 +153,6 @@ function load_one_file( filenm ) {
           date_time_to: data.through
         } 
       }))
-      .pipe(debugStream())
       .pipe(csv.transform (function(data, callback){ //reject bad data
           if(
             typeof(data.source) === "string" && 
