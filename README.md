@@ -10,4 +10,8 @@ Payroll csv file is downloaded from Telestaff and loaded into Munis, using store
 
 ## clear_server_files/clear_server_files.js
 We will need to delete the payroll (export) files from the FTP server occasionally.
-Import files they will clear.
+Import files they will clear. (this is redundant at this point payroll export deletes its own files)
+
+## Project status
+Master branch is deployed: import deployed to lambda, export doesn't work there so is deployed to coa-gis-fme2
+Branches 'callback' and 'newhope' don't work yet, but are attempts at a rewrite using mssql instead of tedious (which allows db pool).
