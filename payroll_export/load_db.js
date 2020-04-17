@@ -1,11 +1,12 @@
-const debugStream = require('debug-stream')('new: ')
 const fs = require('fs');
 const csv = require('csv');
 const { parse } = require('date-fns');
 
 const { Connection, Request, TYPES } = require('tedious');
 
-// require('dotenv').config({path:'./.env'})
+const logit = require('./logit');
+
+require('dotenv').config({path:'./.env'})
 const dbConfig = {
       authentication: {
           type: "default",
@@ -18,7 +19,7 @@ const dbConfig = {
       options: {
           database: process.env.sql_db,  
           encrypt: false,
-          connectTimeout: 150000
+          trustServerCertificate: false
       }
 }
 const table = '[avl].[telestaff_import_time]';
@@ -27,67 +28,75 @@ const table = '[avl].[telestaff_import_time]';
 // const filelist = [ 'payroll-export--T20200305-I000-S1583427600712.csv', 'payroll-export--T20200304-I000-S1583341200625.csv' ];
 // load_db( filelist )
 // .then(files_to_del => {
-//   console.error('files_to_del',files_to_del);
+//   logit('files_to_del',files_to_del);
 // }, function onReject(err) {
-//   console.error(err);
+//   logit(err);
 // });
 
 function load_db( filelist ) {
-  return new Promise(function(resolve, reject) {
-    clear_table();
-    retnoerr = [];
-    filelist.forEach((filenm) => {
-      load_one_file(filenm)
-      .then(file => {
-        retnoerr.push(file);
-      }, function onReject(err) {
-        console.error(err);
-        reject(err);
+  return new Promise(async function(resolve, reject) {
+    try {
+      await clear_table();
+      let getPromises = filelist.map(async (filenm) => {
+        return await load_one_file(filenm);
       });
-    });
-    run_stored_proc();
-    resolve(retnoerr);
+      Promise.all(getPromises)
+      .then(async (retfiles) => {
+        await run_stored_proc();
+        resolve(retfiles);
+      });
+    }
+    catch(err) {
+      logit(err);
+      reject(err);
+    }
   });
 }
 
 function clear_table(){
-      //delete old rows from table
-    console.log('clear_table');
+  return new Promise(function(resolve, reject) {
     const connection = new Connection(dbConfig);
     connection.on('connect', function(err) {
       if (err) {
-        console.error('Connection Failed1: ' + err);
+        logit('DB Connection Failed: clear');
+        reject(err);
       }
       console.log('clear_table_connect');
 
       request = new Request("delete from " + table, function(err, rowCount) {
         if (err) {
-          console.error(err);
+          logit(err);
         }
-        console.log("Table Cleared");
+        logit("Table Cleared");
         connection.close();
+        resolve();
       });
       connection.execSql(request);
     });
-}
-
-function run_stored_proc(){
-  //run stored procedure on database
-const connection = new Connection(dbConfig);
-connection.on('connect', function(err) {
-  if (err) {
-    console.error('Connection Failed2');
-  }
-  request = new Request("exec [avl].[sptelestaff_insert_time]", function(err, rowCount) {
-    if (err) {
-      console.error(err);
-    }
-    console.log("Stored Procedure Run");
-    connection.close();
   });
-  connection.execSql(request);
-});
 }
+//////////////////////////////
+function run_stored_proc(){
+  return new Promise(function(resolve, reject) {
+    const connection = new Connection(dbConfig);
+    connection.on('connect', function(err) {
+      if (err) {
+        logit('DB Connection Failed: sp');
+        reject(err);
+      }
+      request = new Request("exec [avl].[sptelestaff_insert_time]", function(err, rowCount) {
+        if (err) {
+          logit(err);
+        }
+        logit("Stored Procedure Run");
+        connection.close();
+        resolve();
+      });
+      connection.execSql(request);
+    });
+  });
+}
+//////////////////////////////
 function load_one_file( filenm ) {
   return new Promise(function(resolve, reject) {
     const rowSource = fs.createReadStream('/tmp/' + filenm, "utf8");
@@ -95,7 +104,7 @@ function load_one_file( filenm ) {
     const connection = new Connection(dbConfig);
     connection.on('connect', function(err) {
       if (err) {
-        console.error('Connection Failed3');
+        logit('DB Connection Failed: load');
         reject(err);
       }
 
@@ -106,8 +115,9 @@ function load_one_file( filenm ) {
           connection.close();
           reject(err);
         }
-        console.log('Rows Inserted: ' + rowCont);
+        logit('Rows Inserted: ' + rowCont, filenm);
         connection.close();
+        resolve(filenm);
       });
       // setup columns
       bulkLoad.addColumn('source', TYPES.VarChar, { length: 32, nullable: true });
@@ -155,7 +165,6 @@ function load_one_file( filenm ) {
           date_time_to: data.through
         } 
       }))
-      .pipe(debugStream())
       .pipe(csv.transform (function(data, callback){ //reject bad data
           if(
             typeof(data.source) === "string" && 
@@ -194,7 +203,6 @@ function load_one_file( filenm ) {
       // .pipe(csv.stringify()).pipe(process.stdout)
       .pipe(rowStream);
     });
-    resolve(filenm);
   });
 }
 
