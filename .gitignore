@@ -4,3 +4,5 @@ node_modules/
 *.log
 *.xml
 .DS_Store
+*zip
+deploy.sh
