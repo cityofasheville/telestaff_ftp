@@ -28,7 +28,7 @@ async function Run(){
 //     await Run();
 // }
 // 
-exports.handler = async event => await
+// exports.handler = async event => await
      Run();
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 function ftp_get(){
@@ -61,20 +61,22 @@ function ftp_get(){
         .then(data => {
             let filenameList = data.map( fileObj => fileObj.name );
             let getPromises = filenameList.map(async filenm => {
-                console.log("Reading from FTP: " + filenm); 
+                logit("Reading from FTP: " + filenm); 
                 filelist.push( filenm );
-                await sftp.get( remotepath + filenm, '/tmp/' + filenm );   //Download each file
+                await sftp.get( remotepath + filenm, './tmp/' + filenm );   //Download each file
             });
             Promise.all(getPromises)
             .then(async () => { // load_db loads database, returns successful list so remote files can be deleted
                 logit(filelist);
                 load_db( filelist )
                 .then(files_to_del => {
-                    let delPromises = files_to_del.map(filenm => {
-                        return sftp.delete( remotepath + filenm );
+                    let delPromises = files_to_del.map(async filenm => {
+                        logit("Files deleted from FTP: " + filenm);
+                        await sftp.delete( remotepath + filenm );
+                        return filenm;
                     })
                     Promise.all(delPromises)
-                    .then(() => {
+                    .then((filenms) => {
                         sftp.end();
                         resolve(0);
                     });                

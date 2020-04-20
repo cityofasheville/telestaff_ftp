@@ -25,10 +25,10 @@ const dbConfig = {
 const table = '[avl].[telestaff_import_time]';
 
 // Module test
-// const filelist = [ 'payroll-export--T20200305-I000-S1583427600712.csv', 'payroll-export--T20200304-I000-S1583341200625.csv' ];
+// const filelist = [ 'payroll-export--T20200415-I000-S1586966400400.csv','payroll-export--T20200305-I000-S1583427600712.csv' ];
 // load_db( filelist )
 // .then(files_to_del => {
-//   logit('files_to_del',files_to_del);
+//   logit('files_to_del',files_to_del[0]);
 // }, function onReject(err) {
 //   logit(err);
 // });
@@ -38,7 +38,12 @@ function load_db( filelist ) {
     try {
       await clear_table();
       let getPromises = filelist.map(async (filenm) => {
-        return await load_one_file(filenm);
+        try {
+          return await load_one_file(filenm);
+        }
+        catch(err) {
+          reject(err);
+        }
       });
       Promise.all(getPromises)
       .then(async (retfiles) => {
@@ -61,7 +66,6 @@ function clear_table(){
         logit('DB Connection Failed: clear');
         reject(err);
       }
-      console.log('clear_table_connect');
 
       request = new Request("delete from " + table, function(err, rowCount) {
         if (err) {
@@ -99,7 +103,7 @@ function run_stored_proc(){
 //////////////////////////////
 function load_one_file( filenm ) {
   return new Promise(function(resolve, reject) {
-    const rowSource = fs.createReadStream('/tmp/' + filenm, "utf8");
+    const rowSource = fs.createReadStream('./tmp/' + filenm, "utf8");
 
     const connection = new Connection(dbConfig);
     connection.on('connect', function(err) {
@@ -111,6 +115,10 @@ function load_one_file( filenm ) {
       // bulkLoad
       var option = { keepNulls: true }; 
       var bulkLoad = connection.newBulkLoad(table, option, function(err, rowCont) {
+        if(rowCont === 0) {
+          connection.close();
+          resolve(filenm); // file still needs to be deleted
+        }
         if (err) {
           connection.close();
           reject(err);
