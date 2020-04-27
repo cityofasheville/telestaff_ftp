@@ -2,9 +2,6 @@ const { Connection, Request } = require('tedious');
 let FTPClient = require('ssh2-sftp-client');
 var fs = require('fs');
 
-const Logger = require('coa-node-logging');
-const logger = new Logger("Logger", 'logfile.log');
-
 require('dotenv').config({path:'./.env'})
 const dateString = (new Date()).toJSON().replace(/:/g,'-');
 const config = {
@@ -13,10 +10,6 @@ const config = {
         {
             sqlFile: 'PersonXML.sql',
             xmlFile: `Person.xml`
-        },
-        {    
-            sqlFile: 'StaffingXML.sql',
-            xmlFile: `Staffing.xml`
         }
     ],
     dbConfig: {
@@ -47,7 +40,7 @@ async function Run(){
             await loadAFile(fileObj);
         };
     } catch(err) {
-        logger.error(err);
+        console.error(err);
     }
 }
 exports.handler = event => 
@@ -61,17 +54,17 @@ function loadAFile(fileObj){
         const connection = new Connection(config.dbConfig);
         connection.on('connect', function(err) {
             if (err) {
-                logger.error(err);
+                console.error(err);
                 reject(err);
             } else {
-                logger.info('DB Connected');
+                console.log('DB Connected');
                 const request = new Request(
                     sqlString,
                     function(err, rowCount, rows) {
                     if (err) {
-                        logger.error(err);
+                        console.error(err);
                     } else {
-                        logger.info('XML returned');
+                        console.log('XML returned');
                     }
                     connection.close();
                 });
@@ -91,7 +84,7 @@ function loadAFile(fileObj){
 function FtpStep(fileToSend){
     return new Promise(function(resolve, reject) {
 
-        logger.info("Sending to SFTP: " + fileToSend); 
+        console.log("Sending to SFTP: " + fileToSend); 
 
         const { host, username, password, path } = config.ftpConfig;
         
@@ -99,12 +92,12 @@ function FtpStep(fileToSend){
         let sftp = new FTPClient();
         sftp.on('close', (sftpError) => {
             if(sftpError){
-                logger.error(new Error("sftpError"));
+                console.error(new Error("sftpError"));
             }
         });
         sftp.on('error', (err) => {
-            logger.error("err2" + err.level + err.description?err.description:'');
-            logger.error(new Error(err, fileToSend));
+            console.error("err2" + err.level + err.description?err.description:'');
+            console.error(new Error(err, fileToSend));
         });
 
         sftp.connect({
@@ -114,12 +107,12 @@ function FtpStep(fileToSend){
         }).then(() => {
             return sftp.put(readStream, path + config.dateString + fileToSend);
         }).then(res => {
-            logger.info("Sent: " + res);
+            console.log("Sent: " + res);
             sftp.end();
             resolve(0);
         }).catch(err => {
-        logger.error("err3");
-        logger.error(err);
+        console.error("err3");
+        console.error(err);
         sftp.end();
         });
     });
@@ -127,7 +120,7 @@ function FtpStep(fileToSend){
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 process.on('uncaughtException', (err)=>{
-    logger.error(err);
+    console.error(err);
 });
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 

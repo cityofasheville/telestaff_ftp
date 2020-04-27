@@ -1,5 +1,5 @@
 {
-  "name": "telestaff",
+  "name": "telestaff-import-person",
   "version": "1.0.0",
   "description": "Sends and receives files to Kronos Telestaff.",
   "main": "index.js",
