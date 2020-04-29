@@ -1,17 +1,15 @@
-const { Connection, Request } = require('tedious')
-let FTPClient = require('ssh2-sftp-client')
-var fs = require('fs')
+const { Connection, Request } = require('tedious');
+let FTPClient = require('ssh2-sftp-client');
+var fs = require('fs');
 
 require('dotenv').config({path:'./.env'})
-let payrollweek = require('payrollweek')
-
-const dateString = (new Date()).toJSON().replace(/:/g,'-')
+const dateString = (new Date()).toJSON().replace(/:/g,'-');
 const config = {
     dateString,
     filesToSend: [
-        {    
-            sqlFile: 'StaffingXML.sql',
-            xmlFile: `Staffing.xml`
+        {
+            sqlFile: 'PersonXML.sql',
+            xmlFile: `Person.xml`
         }
     ],
     dbConfig: {
@@ -45,13 +43,8 @@ async function Run(){
         console.error(err);
     }
 }
-exports.handler = event => {
-    if( payrollweek() ) {
-        console.log("Don't run: today is payroll week")
-    } else {
-        Run();
-    }
-}
+exports.handler = event => 
+     Run();
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 function loadAFile(fileObj){
