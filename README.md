@@ -20,7 +20,7 @@ Branches 'callback' and 'newhope' don't work yet, but are attempts at a rewrite 
 - Yet another xml format *eyeroll*
 
 ## Timing 
-Biweekly jobs are triggered weekly and use the payrollweek function becausqe cron can't do that.
+Biweekly jobs are triggered weekly and use the payrollweek function because cron can't do that.
 
 We send Person1 and then Person2 nightly. Lambda: telestaff_import_person (4AM-EST) 
 We pull Payroll Sun night payroll week. Coa-gis-fme2: c:\telestaff_ftp
