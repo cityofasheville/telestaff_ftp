@@ -4,6 +4,7 @@ const load_db = require('./load_db');
 const logit = require('./logit');
 
 require('dotenv').config({path:'./.env'});
+let payrollweek = require('payrollweek')
 
 const ftpConfig = {
     host: process.env.ftp_host,
@@ -29,7 +30,12 @@ async function Run(){
 // }
 // 
 // exports.handler = async event => await
-     Run();
+    if( payrollweek() ) {
+        Run();
+    } else {
+        console.log("Don't run: today is not payroll week")
+    }
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 function ftp_get(){
     return new Promise(function(resolve, reject) {
