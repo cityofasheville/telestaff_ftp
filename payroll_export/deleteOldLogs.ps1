@@ -1,6 +1,6 @@
 # Delete logfiles older than 30 day(s)
 $Path = "C:\telestaff_ftp\payroll_export\tmp"
-$Daysback = "-30"
+$Daysback = "-90"
 
 $CurrentDate = Get-Date
 $DatetoDelete = $CurrentDate.AddDays($Daysback)

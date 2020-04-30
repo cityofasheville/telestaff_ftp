@@ -4,7 +4,7 @@ const load_db = require('./load_db');
 const logit = require('./logit');
 
 require('dotenv').config({path:'./.env'});
-let payrollweek = require('payrollweek')
+let payrollweek = require('./payrollweek')
 
 const ftpConfig = {
     host: process.env.ftp_host,
