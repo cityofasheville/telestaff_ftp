@@ -4,7 +4,9 @@
   "description": "Sends and receives files to Kronos Telestaff.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
   },
   "repository": {
     "type": "git",
@@ -25,11 +27,13 @@
     "duplex": "^1.0.0",
     "mssql": "^6.2.0",
     "ssh2-sftp-client": "^5.0.1",
-    "tedious": "^8.0.1"
+    "tedious": "^8.0.1",
+    "snyk": "^1.316.1"
   },
   "devDependencies": {
     "eslint": "^6.8.0",
     "eslint-config-airbnb-base": "^14.1.0",
     "eslint-plugin-import": "^2.20.1"
-  }
+  },
+  "snyk": true
 }
