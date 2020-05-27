@@ -25,13 +25,15 @@ const dbConfig = {
 const table = '[avl].[telestaff_import_time]';
 
 // Module test
-// const filelist = [ 'payroll-export--T20200415-I000-S1586966400400.csv','payroll-export--T20200305-I000-S1583427600712.csv' ];
+/////////////////////////////////////////
+// const filelist = [ 'Payroll-05-02-2020.csv' ];
 // load_db( filelist )
 // .then(files_to_del => {
 //   logit('files_to_del',files_to_del[0]);
 // }, function onReject(err) {
 //   logit(err);
 // });
+/////////////////////////////////////////
 
 function load_db( filelist ) {
   return new Promise(async function(resolve, reject) {
@@ -142,35 +144,28 @@ function load_one_file( filenm ) {
       connection.execBulkLoad(bulkLoad);
 
       rowSource
-      .pipe(csv.parse({
+      .pipe(csv.parse({  // parse csv into object of strings
         bom: true,
         columns: true,
-        cast: function(value, context){ // correct data types
-          if(context.column === "hours") {
-              return parseFloat(value);
-          } else if(context.column === "employeePayrollID" || context.column === 'payrollCode') {
-              return parseInt(value, 10);
-          } else if(context.column === "payRangeFrom") {
-              return parse(value, "yyyy-MM-dd", new Date());
-          } else if(context.column === 'from' || context.column === 'through') {
-              let datestr = `${value.slice(0,19)}`
-              return parse(datestr, "yyyy-MM-dd kk:mm:ss", new Date());
+        cast: function(value, context){ 
+          if(context.column === 'from' || context.column === 'through') {
+            return `${value.slice(0,19)}`  // Telestaff date format is nonstandard '2020-05-03 08:00:00 EDT'
           } else {
-              return value;
+            return value;
           }
         }
       }))
-      .pipe(csv.transform (function(data){ // choose and rename columns
+      .pipe(csv.transform (function(data){ // choose and rename columns : correct data types
         return { 
           source: 'Telestaff',
           group: data.institutionAbbreviation, 
-          emp_id: data.employeePayrollID,
-          pay_code: data.payrollCode,
-          date_worked: data.payRangeFrom,
-          hours_worked: data.hours,
+          emp_id: parseInt(data.employeePayrollID, 10),
+          pay_code: parseInt(data.payrollCode, 10),
+          date_worked: parse(data.from, "yyyy-MM-dd kk:mm:ss", new Date() ),
+          hours_worked: parseFloat(data.hours),
           note: data.rosterNote, 
-          date_time_from: data.from, 
-          date_time_to: data.through
+          date_time_from: parse(data.from, "yyyy-MM-dd kk:mm:ss", new Date()),
+          date_time_to: parse(data.through, "yyyy-MM-dd kk:mm:ss", new Date())
         } 
       }))
       .pipe(csv.transform (function(data, callback){ //reject bad data
