@@ -2,7 +2,7 @@ const { Connection, Request } = require('tedious');
 let FTPClient = require('ssh2-sftp-client');
 var fs = require('fs');
 
-require('dotenv').config({path:'./.env'})
+// require('dotenv').config({path:'./.env'})
 const dateString = (new Date()).toJSON().replace(/:/g,'-');
 const config = {
     dateString,

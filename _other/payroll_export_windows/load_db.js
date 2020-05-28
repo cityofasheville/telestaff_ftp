@@ -4,7 +4,9 @@ const { parse } = require('date-fns');
 
 const { Connection, Request, TYPES } = require('tedious');
 
-require('dotenv').config({path:'/.env'})   // <============
+const logit = require('./logit');
+
+require('dotenv').config({path:'./.env'})
 const dbConfig = {
       authentication: {
           type: "default",
@@ -24,12 +26,12 @@ const table = '[avl].[telestaff_import_time]';
 
 // Module test
 /////////////////////////////////////////
-// const filelist = [ 'polard.csv' ];
+// const filelist = [ 'Payroll-05-02-2020.csv' ];
 // load_db( filelist )
 // .then(files_to_del => {
-//   console.log('files_to_del',files_to_del[0]);
+//   logit('files_to_del',files_to_del[0]);
 // }, function onReject(err) {
-//   console.log(err);
+//   logit(err);
 // });
 /////////////////////////////////////////
 
@@ -52,7 +54,7 @@ function load_db( filelist ) {
       });
     }
     catch(err) {
-      console.log(err);
+      logit(err);
       reject(err);
     }
   });
@@ -63,15 +65,15 @@ function clear_table(){
     const connection = new Connection(dbConfig);
     connection.on('connect', function(err) {
       if (err) {
-        console.log('DB Connection Failed: clear');
+        logit('DB Connection Failed: clear');
         reject(err);
       }
 
       request = new Request("delete from " + table, function(err, rowCount) {
         if (err) {
-          console.log(err);
+          logit(err);
         }
-        console.log("Table Cleared");
+        logit("Table Cleared");
         connection.close();
         resolve();
       });
@@ -85,14 +87,14 @@ function run_stored_proc(){
     const connection = new Connection(dbConfig);
     connection.on('connect', function(err) {
       if (err) {
-        console.log('DB Connection Failed: sp');
+        logit('DB Connection Failed: sp');
         reject(err);
       }
       request = new Request("exec [avl].[sptelestaff_insert_time]", function(err, rowCount) {
         if (err) {
-          console.log(err);
+          logit(err);
         }
-        console.log("Stored Procedure Run");
+        logit("Stored Procedure Run");
         connection.close();
         resolve();
       });
@@ -103,12 +105,12 @@ function run_stored_proc(){
 //////////////////////////////
 function load_one_file( filenm ) {
   return new Promise(function(resolve, reject) {
-    const rowSource = fs.createReadStream('/tmp/' + filenm, "utf8");    // <============
+    const rowSource = fs.createReadStream('./tmp/' + filenm, "utf8");
 
     const connection = new Connection(dbConfig);
     connection.on('connect', function(err) {
       if (err) {
-        console.log('DB Connection Failed: load');
+        logit('DB Connection Failed: load');
         reject(err);
       }
 
@@ -123,7 +125,7 @@ function load_one_file( filenm ) {
           connection.close();
           reject(err);
         }
-        console.log('Rows Inserted: ' + rowCont, filenm);
+        logit('Rows Inserted: ' + rowCont, filenm);
         connection.close();
         resolve(filenm);
       });

@@ -2,7 +2,6 @@ const { Connection, Request } = require('tedious')
 let FTPClient = require('ssh2-sftp-client')
 var fs = require('fs')
 
-require('dotenv').config({path:'./.env'})
 let payrollweek = require('payrollweek')
 
 const dateString = (new Date()).toJSON().replace(/:/g,'-')
@@ -45,14 +44,18 @@ async function Run(){
         console.error(err);
     }
 }
-exports.handler = event => {
-    if( payrollweek() ) {
-        console.log("Don't run: today is payroll week")
+// To Test, you can set process.env.payrollweek=both and it will always run
+// Normally Import Staffing should be run on NON-Payroll week, so set process.env.payrollweek=not
+exports.handler = async (event) => {
+    if( process.env.payrollweek === 'both' || 
+        (payrollweek() && process.env.payrollweek === 'pay') ||
+        (!payrollweek() && process.env.payrollweek === 'not')
+        ) {
+        await Run();
     } else {
-        Run();
+        console.log("Don't run: today is payroll week")
     }
 }
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 function loadAFile(fileObj){
     return new Promise(function(resolve, reject) {
@@ -89,6 +92,7 @@ function loadAFile(fileObj){
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 function FtpStep(fileToSend){
+
     return new Promise(function(resolve, reject) {
 
         console.log("Sending to SFTP: " + fileToSend); 
