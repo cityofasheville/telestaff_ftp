@@ -1,6 +1,10 @@
 const fs = require('fs');
+const Stream = require('stream');
 const csv = require('csv');
 const { parse } = require('date-fns');
+const AWS = require('aws-sdk');
+
+const s3 = new AWS.S3();
 
 const { Connection, Request, TYPES } = require('tedious');
 
@@ -24,7 +28,7 @@ const table = '[avl].[telestaff_import_time]';
 
 // Module test
 /////////////////////////////////////////
-// const filelist = [ 'polard.csv' ];
+// const filelist = [ 'Payroll-05-02-2020.csv' ];
 // load_db( filelist )
 // .then(files_to_del => {
 //   console.log('files_to_del',files_to_del[0]);
@@ -101,6 +105,27 @@ function run_stored_proc(){
   });
 }
 //////////////////////////////
+function s3_writable_stream(filename){
+  var ws = new Stream;
+  ws.writable = true;
+
+  ws.write = function(buf) {
+      const s3_params = {
+          Bucket: "telestaff-ftp-backup",
+          Key: filename,
+          Body: buf,
+          ContentType: "text/csv"
+      };
+      s3.putObject(s3_params).promise(); 
+  }
+
+  ws.end = function(buf) {
+      if(arguments.length) ws.write(buf);
+      ws.writable = false;
+  }
+  return ws;
+}
+//////////////////////////////
 function load_one_file( filenm ) {
   return new Promise(function(resolve, reject) {
     const rowSource = fs.createReadStream('/tmp/' + filenm, "utf8");    // <============
@@ -117,7 +142,7 @@ function load_one_file( filenm ) {
       var bulkLoad = connection.newBulkLoad(table, option, function(err, rowCont) {
         if(rowCont === 0) {
           connection.close();
-          resolve(filenm); // file still needs to be deleted
+          resolve(filenm); // file on ftp still needs to be deleted
         }
         if (err) {
           connection.close();
@@ -140,6 +165,11 @@ function load_one_file( filenm ) {
 
       const rowStream = bulkLoad.getRowStream();
       connection.execBulkLoad(bulkLoad);
+
+      rowSource
+      .pipe(
+        s3_writable_stream( filenm )
+      );
 
       rowSource
       .pipe(csv.parse({  // parse csv into object of strings
