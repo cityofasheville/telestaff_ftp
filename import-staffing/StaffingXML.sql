@@ -1,5 +1,6 @@
 SET NOCOUNT ON;
-SELECT '<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>' + (
+-- SELECT '<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>' + (
+SELECT (	
 	SELECT
 	CONVERT(XML, (
 		SELECT 
