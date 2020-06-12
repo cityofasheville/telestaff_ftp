@@ -106,22 +106,24 @@ function run_stored_proc(){
 }
 //////////////////////////////
 function s3_writable_stream(filename){
-  var ws = new Stream;
+  let ws = new Stream;
   ws.writable = true;
+  let file_content = '';
 
   ws.write = function(buf) {
-      const s3_params = {
-          Bucket: "telestaff-ftp-backup",
-          Key: filename,
-          Body: buf,
-          ContentType: "text/csv"
-      };
-      s3.putObject(s3_params).promise(); 
+    file_content += buf;
   }
 
   ws.end = function(buf) {
-      if(arguments.length) ws.write(buf);
-      ws.writable = false;
+    if(arguments.length) ws.write(buf);
+    const s3_params = {
+      Bucket: "telestaff-ftp-backup",
+      Key: filename,
+      Body: file_content,
+      ContentType: "text/csv"
+    };
+    s3.putObject(s3_params).promise();
+    ws.writable = false;
   }
   return ws;
 }
