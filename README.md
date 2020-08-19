@@ -14,7 +14,7 @@ Payroll csv file is downloaded from Telestaff and loaded into Munis, using store
 Copy of file is stored in S3.
 
 ## Project status
-Master branch is deployed to 3 lambdas.
+Production branch is deployed to 3 lambdas.
 Branches 'callback' and 'newhope' don't work yet, but are attempts at a rewrite using mssql instead of tedious (which allows db pool).
 
 ## TODO
