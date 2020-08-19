@@ -115,15 +115,17 @@ function s3_writable_stream(filename){
   }
 
   ws.end = function(buf) {
+    let s3_bucket_name = "telestaff-ftp-backup"
     if(arguments.length) ws.write(buf);
     const s3_params = {
-      Bucket: "telestaff-ftp-backup",
+      Bucket: s3_bucket_name,
       Key: filename,
       Body: file_content,
       ContentType: "text/csv"
     };
     s3.putObject(s3_params).promise();
     ws.writable = false;
+    console.log(`Copy of file ${filename} is stored in S3: ${s3_bucket_name}`)
   }
   return ws;
 }
@@ -188,12 +190,12 @@ function load_one_file( filenm ) {
       .pipe(csv.transform (function(data){ // choose and rename columns : correct data types
         return { 
           source: 'Telestaff',
-          group: data.institutionAbbreviation, 
+          group: data.institutionAbbreviation.substr(0,32), 
           emp_id: parseInt(data.employeePayrollID, 10),
           pay_code: parseInt(data.payrollCode, 10),
           date_worked: parse(data.from, "yyyy-MM-dd kk:mm:ss", new Date() ),
           hours_worked: parseFloat(data.hours),
-          note: data.rosterNote, 
+          note: data.rosterNote.substr(0,128),
           date_time_from: parse(data.from, "yyyy-MM-dd kk:mm:ss", new Date()),
           date_time_to: parse(data.through, "yyyy-MM-dd kk:mm:ss", new Date())
         } 

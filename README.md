@@ -11,7 +11,7 @@ Runs biweekly as Lambda
 
 ## payroll_export/payroll_export.js
 Payroll csv file is downloaded from Telestaff and loaded into Munis, using stored procedure.
-
+Copy of file is stored in S3.
 
 ## Project status
 Master branch is deployed to 3 lambdas.
