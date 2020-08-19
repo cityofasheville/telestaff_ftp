@@ -1,27 +1,28 @@
 # Telestaff FTP
 Sends and receives files to Kronos Telestaff.
 
-## import-person and import-staffing
-Sql files create XML, which is FTPed up.
-Two files, Person and Staffing (accruals) are uploaded.
+## import-person 
+SQL file creates XML, which is FTPed up.
+Nightly runs as Lambda
+
+## import-staffing (Accruals)
+Sql file creates XML, which is FTPed up.
+Runs biweekly as Lambda
 
 ## payroll_export/payroll_export.js
 Payroll csv file is downloaded from Telestaff and loaded into Munis, using stored procedure.
-
-## clear_server_files/clear_server_files.js
-We will need to delete the payroll (export) files from the FTP server occasionally.
-Import files they will clear. (this is redundant at this point payroll export deletes its own files)
+Copy of file is stored in S3.
 
 ## Project status
-Master branch is deployed: two imports deployed to lambda, export doesn't work there so is deployed to coa-gis-fme2
+Master branch is deployed to 3 lambdas.
 Branches 'callback' and 'newhope' don't work yet, but are attempts at a rewrite using mssql instead of tedious (which allows db pool).
 
 ## TODO
-- Yet another xml format *eyeroll*
+- Person 02: Another xml format. Needed for Police go-live.
 
 ## Timing 
-Biweekly jobs are triggered weekly and use the payrollweek function because cron can't do that.
+Biweekly jobs are triggered weekly and use the payrollweek function because Lambda cron can't do that.
 
-We send Person1 and then Person2 nightly. Lambda: telestaff_import_person (4AM-EST) 
-We pull Payroll Sun night payroll week. Coa-gis-fme2: c:\telestaff_ftp
-We send Staffing (accruals) Wed night non-payroll weeks. Lambda: telestaff_import_staffing (Thursday-330AM-EST) .
+We send Person1 nightly. [1AM/2AM] Lambda: telestaff_import_person (Midnt-EST    0 05 ? * * *) 
+We pull Payroll Sun night payroll week. [1AM-Mon] Lambda: telestaff_export_payroll 
+We send Staffing (accruals) Wed night non-payroll weeks. [1AM-Thur] Lambda: telestaff_import_staffing 0 05 ? * 5 *(Thursday-330AM-EST) .

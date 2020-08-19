@@ -1,8 +1,9 @@
 let FTPClient = require('ssh2-sftp-client');
 
 const load_db = require('./load_db');
+const logit = require('./logit');
 
-require('dotenv').config({path:'/.env'});
+require('dotenv').config({path:'./.env'});
 let payrollweek = require('./payrollweek')
 
 const ftpConfig = {
@@ -12,27 +13,29 @@ const ftpConfig = {
     remotepath: process.env.ftp_export_path
 }
 
+
+
 async function Run(){
     try {
         await ftp_get();
     } catch(err) {
-        console.log(err);
+        logit(err);
     }
 }
-
-// To Test, you can set process.env.payrollweek=both and it will always run
-// Normally Payroll Export should be run on Payroll week, so set process.env.payrollweek=pay
-
-exports.handler = async (event) => {
-    if( process.env.payrollweek === 'both' || 
-        (payrollweek() && process.env.payrollweek === 'pay') ||
-        (!payrollweek() && process.env.payrollweek === 'not')
-        ) {
-        await Run();
+// if (require.main === module) { //call directly
+//     Run();
+// } else {
+//     exports.handler = async event =>  // run as Lambda
+//     await Run();
+// }
+// 
+// exports.handler = async event => await
+    if( payrollweek() ) {
+        Run();
     } else {
         console.log("Don't run: today is not payroll week")
     }
-}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 function ftp_get(){
     return new Promise(function(resolve, reject) {
@@ -40,17 +43,17 @@ function ftp_get(){
         const { host, username, password, remotepath } = ftpConfig;
         const filelist = [];
 
-        console.log("Reading from SFTP: " + ftpConfig.host); 
+        logit("Reading from SFTP: " + ftpConfig.host); 
 
         let sftp = new FTPClient();
         sftp.on('close', (sftpError) => {
             if(sftpError){
-                console.log(new Error("sftpError"));
+                logit(new Error("sftpError"));
             }
         });
         sftp.on('error', (err) => {
-            console.log("err2" + err.level + err.description?err.description:'');
-            console.log(new Error(err));
+            logit("err2" + err.level + err.description?err.description:'');
+            logit(new Error(err));
         });
 
         sftp.connect({
@@ -64,17 +67,17 @@ function ftp_get(){
         .then(data => {
             let filenameList = data.map( fileObj => fileObj.name );
             let getPromises = filenameList.map(async filenm => {
-                console.log("Reading from FTP: " + filenm); 
+                logit("Reading from FTP: " + filenm); 
                 filelist.push( filenm );
-                await sftp.get( remotepath + filenm, '/tmp/' + filenm );   //Download each file
+                await sftp.get( remotepath + filenm, './tmp/' + filenm );   //Download each file
             });
             Promise.all(getPromises)
             .then(async () => { // load_db loads database, returns successful list so remote files can be deleted
-                console.log(filelist);
+                logit(filelist);
                 load_db( filelist )
                 .then(files_to_del => {
                     let delPromises = files_to_del.map(async filenm => {
-                        console.log("Files deleted from FTP: " + filenm);
+                        logit("Files deleted from FTP: " + filenm);
                         await sftp.delete( remotepath + filenm );
                         return filenm;
                     })
@@ -86,13 +89,13 @@ function ftp_get(){
                 })                 
             })
             .catch(err => {
-                console.log("Error: " + err);
+                logit("Error: " + err);
                 sftp.end();
                 reject(err);
             });
         })
         .catch(err => {
-            console.log("Error: " + err);
+            logit("Error: " + err);
             sftp.end();
         });
     });
@@ -100,5 +103,5 @@ function ftp_get(){
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 process.on('uncaughtException', (err)=>{
-    console.log("Uncaught error:" + err);
+    logit("Uncaught error:" + err);
 });

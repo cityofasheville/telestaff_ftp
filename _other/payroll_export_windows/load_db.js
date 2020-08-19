@@ -1,14 +1,12 @@
 const fs = require('fs');
-const Stream = require('stream');
 const csv = require('csv');
 const { parse } = require('date-fns');
-const AWS = require('aws-sdk');
-
-const s3 = new AWS.S3();
 
 const { Connection, Request, TYPES } = require('tedious');
 
-require('dotenv').config({path:'/.env'})   // <============
+const logit = require('./logit');
+
+require('dotenv').config({path:'./.env'})
 const dbConfig = {
       authentication: {
           type: "default",
@@ -31,9 +29,9 @@ const table = '[avl].[telestaff_import_time]';
 // const filelist = [ 'Payroll-05-02-2020.csv' ];
 // load_db( filelist )
 // .then(files_to_del => {
-//   console.log('files_to_del',files_to_del[0]);
+//   logit('files_to_del',files_to_del[0]);
 // }, function onReject(err) {
-//   console.log(err);
+//   logit(err);
 // });
 /////////////////////////////////////////
 
@@ -56,7 +54,7 @@ function load_db( filelist ) {
       });
     }
     catch(err) {
-      console.log(err);
+      logit(err);
       reject(err);
     }
   });
@@ -67,15 +65,15 @@ function clear_table(){
     const connection = new Connection(dbConfig);
     connection.on('connect', function(err) {
       if (err) {
-        console.log('DB Connection Failed: clear');
+        logit('DB Connection Failed: clear');
         reject(err);
       }
 
       request = new Request("delete from " + table, function(err, rowCount) {
         if (err) {
-          console.log(err);
+          logit(err);
         }
-        console.log("Table Cleared");
+        logit("Table Cleared");
         connection.close();
         resolve();
       });
@@ -89,14 +87,14 @@ function run_stored_proc(){
     const connection = new Connection(dbConfig);
     connection.on('connect', function(err) {
       if (err) {
-        console.log('DB Connection Failed: sp');
+        logit('DB Connection Failed: sp');
         reject(err);
       }
       request = new Request("exec [avl].[sptelestaff_insert_time]", function(err, rowCount) {
         if (err) {
-          console.log(err);
+          logit(err);
         }
-        console.log("Stored Procedure Run");
+        logit("Stored Procedure Run");
         connection.close();
         resolve();
       });
@@ -105,39 +103,14 @@ function run_stored_proc(){
   });
 }
 //////////////////////////////
-function s3_writable_stream(filename){
-  let ws = new Stream;
-  ws.writable = true;
-  let file_content = '';
-
-  ws.write = function(buf) {
-    file_content += buf;
-  }
-
-  ws.end = function(buf) {
-    let s3_bucket_name = "telestaff-ftp-backup"
-    if(arguments.length) ws.write(buf);
-    const s3_params = {
-      Bucket: s3_bucket_name,
-      Key: filename,
-      Body: file_content,
-      ContentType: "text/csv"
-    };
-    s3.putObject(s3_params).promise();
-    ws.writable = false;
-    console.log(`Copy of file ${filename} is stored in S3: ${s3_bucket_name}`)
-  }
-  return ws;
-}
-//////////////////////////////
 function load_one_file( filenm ) {
   return new Promise(function(resolve, reject) {
-    const rowSource = fs.createReadStream('/tmp/' + filenm, "utf8");    // <============
+    const rowSource = fs.createReadStream('./tmp/' + filenm, "utf8");
 
     const connection = new Connection(dbConfig);
     connection.on('connect', function(err) {
       if (err) {
-        console.log('DB Connection Failed: load');
+        logit('DB Connection Failed: load');
         reject(err);
       }
 
@@ -146,13 +119,13 @@ function load_one_file( filenm ) {
       var bulkLoad = connection.newBulkLoad(table, option, function(err, rowCont) {
         if(rowCont === 0) {
           connection.close();
-          resolve(filenm); // file on ftp still needs to be deleted
+          resolve(filenm); // file still needs to be deleted
         }
         if (err) {
           connection.close();
           reject(err);
         }
-        console.log('Rows Inserted: ' + rowCont, filenm);
+        logit('Rows Inserted: ' + rowCont, filenm);
         connection.close();
         resolve(filenm);
       });
@@ -171,11 +144,6 @@ function load_one_file( filenm ) {
       connection.execBulkLoad(bulkLoad);
 
       rowSource
-      .pipe(
-        s3_writable_stream( filenm )
-      );
-
-      rowSource
       .pipe(csv.parse({  // parse csv into object of strings
         bom: true,
         columns: true,
@@ -190,12 +158,12 @@ function load_one_file( filenm ) {
       .pipe(csv.transform (function(data){ // choose and rename columns : correct data types
         return { 
           source: 'Telestaff',
-          group: data.institutionAbbreviation.substr(0,32), 
+          group: data.institutionAbbreviation, 
           emp_id: parseInt(data.employeePayrollID, 10),
           pay_code: parseInt(data.payrollCode, 10),
           date_worked: parse(data.from, "yyyy-MM-dd kk:mm:ss", new Date() ),
           hours_worked: parseFloat(data.hours),
-          note: data.rosterNote.substr(0,128),
+          note: data.rosterNote, 
           date_time_from: parse(data.from, "yyyy-MM-dd kk:mm:ss", new Date()),
           date_time_to: parse(data.through, "yyyy-MM-dd kk:mm:ss", new Date())
         } 
