@@ -62,7 +62,9 @@ function ftp_get(){
             return sftp.list(remotepath);  // List files
         })
         .then(data => {
-            let filenameList = data.map( fileObj => fileObj.name );
+            let filenameList = data
+                .map( fileObj => fileObj.name )
+                .filter( filenm => filenm !== "payroll-report-export.csv" );
             let getPromises = filenameList.map(async filenm => {
                 console.log("Reading from FTP: " + filenm); 
                 filelist.push( filenm );
