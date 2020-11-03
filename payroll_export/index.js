@@ -64,7 +64,8 @@ function ftp_get(){
         .then(data => {
             let filenameList = data
                 .map( fileObj => fileObj.name )
-                .filter( filenm => filenm !== "payroll-report-export.csv" );
+                .filter( filenm => filenm !== "payroll-report-export.csv" )
+                .filter( filenm => filenm !== "APD-daily-payroll-export.csv" );
             let getPromises = filenameList.map(async filenm => {
                 console.log("Reading from FTP: " + filenm); 
                 filelist.push( filenm );

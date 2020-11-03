@@ -8,7 +8,7 @@ const s3 = new AWS.S3();
 
 const { Connection, Request, TYPES } = require('tedious');
 
-require('dotenv').config({path:'/.env'})   // <============
+require('dotenv').config({path:'/.env'})   // <============ for local run './.env', for lambda, '/.env/' (or comment whole line)
 const dbConfig = {
       authentication: {
           type: "default",
@@ -24,7 +24,7 @@ const dbConfig = {
           trustServerCertificate: false
       }
 }
-const table = '[avl].[telestaff_import_time]';
+const table = '[avl].[telestaff_import_time]';   // <============ table name
 
 // Module test
 /////////////////////////////////////////
@@ -92,7 +92,7 @@ function run_stored_proc(){
         console.log('DB Connection Failed: sp');
         reject(err);
       }
-      request = new Request("exec [avl].[sptelestaff_insert_time]", function(err, rowCount) {
+      request = new Request("exec [avl].[sptelestaff_insert_time]", function(err, rowCount) {     // <============ stored procedure name
         if (err) {
           console.log(err);
         }
@@ -132,7 +132,7 @@ function s3_writable_stream(filename){
 //////////////////////////////
 function load_one_file( filenm ) {
   return new Promise(function(resolve, reject) {
-    const rowSource = fs.createReadStream('/tmp/' + filenm, "utf8");    // <============
+    const rowSource = fs.createReadStream('/tmp/' + filenm, "utf8");    // <============ for local run './tmp/', for lambda, '/tmp/'
 
     const connection = new Connection(dbConfig);
     connection.on('connect', function(err) {
