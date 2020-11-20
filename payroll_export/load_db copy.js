@@ -38,45 +38,35 @@ const dbConfig = {
 /////////////////////////////////////////
 
 function load_db( filelist ) {
-  let retfiles = []
-  const depts = 
-  {
-    "Police": {
-      table: '[avl].[telestaff_import_time_apd]',
-      sproc: '[avl].[sptelestaff_insert_time_apd]',
-      files: []
-    },
-    "Fire": {
-      table: '[avl].[telestaff_import_time]',
-      sproc: '[avl].[sptelestaff_insert_time]',
-      files: []
-    }
-  }
+  let table;  // telestaff_import_time or telestaff_import_time_apd
+  const sproc = []; // array of storedProcedures to run
   return new Promise(async function(resolve, reject) {
     try {
-      filelist.map((filenm) => {
+      let getPromises = filelist.map(async (filenm) => {
         if(filenm.charAt(0)==="P"){        // Police
-          depts.Police.files.push(filenm)
+          table = '[avl].[telestaff_import_time_apd]'
+          sproc.push( '[avl].[sptelestaff_insert_time_apd]' )
+          await clear_table(table);
         }else if(filenm.charAt(0)==="F"){  // Fire
-          depts.Fire.files.push(filenm)
-        }else {
-          reject("Filename didn't start with P or F")
+          table = '[avl].[telestaff_import_time]'
+          sproc.push( '[avl].[sptelestaff_insert_time]' )
+          await clear_table(table);
+        }else reject("Filename didn't start with P or F")
+        try {
+          return await load_one_file(filenm,table);
         }
-      })
-      for (const dept of Object.values(depts)) {
-        if (!dept.files.length === 0){
-          await clear_table(dept.table);
-          let getPromises = dept.files.map(async (filenm) => {
-            await load_one_file(filenm,dept.table);
-          })
-          Promise.all(getPromises)
-          .then(async (deptfiles) => {
-            await run_stored_proc(dept.sproc);
-            retfiles.concat(deptfiles);
-          });
+        catch(err) {
+          reject(err);
         }
-      }
-      resolve(retfiles);
+      });
+      Promise.all(getPromises)
+      .then(async (retfiles) => {
+        var uniquesproc = [...new Set(sproc)]
+        for(sp of uniquesproc){
+          await run_stored_proc(sp);
+        }
+        resolve(retfiles);
+      });
     }
     catch(err) {
       console.log(err);

@@ -22,7 +22,7 @@ async function Run(){
 
 // To Test, you can set process.env.payrollweek=both and it will always run
 // Normally Payroll Export should be run on Payroll week, so set process.env.payrollweek=pay
-
+// This has changed. APD wants payroll export on "not" payroll week Friday
 exports.handler = async (event) => {
     if( process.env.payrollweek === 'both' || 
         (payrollweek() && process.env.payrollweek === 'pay') ||
