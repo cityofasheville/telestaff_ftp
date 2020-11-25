@@ -25,7 +25,6 @@ const dbConfig = {
       }
 }
 
-
 // Module test
 /////////////////////////////////////////
 // const filelist = [ 'Payroll-05-02-2020.csv' ];
@@ -38,17 +37,16 @@ const dbConfig = {
 /////////////////////////////////////////
 
 function load_db( filelist ) {
-  let retfiles = []
   const depts = 
   {
     "Police": {
-      table: '[avl].[telestaff_import_time_apd]',
-      sproc: '[avl].[sptelestaff_insert_time_apd]',
+      table: 'avl.telestaff_import_time_apd',
+      sproc: 'avl.sptelestaff_insert_time_apd',
       files: []
     },
     "Fire": {
-      table: '[avl].[telestaff_import_time]',
-      sproc: '[avl].[sptelestaff_insert_time]',
+      table: 'avl.telestaff_import_time',
+      sproc: 'avl.sptelestaff_insert_time',
       files: []
     }
   }
@@ -59,30 +57,46 @@ function load_db( filelist ) {
           depts.Police.files.push(filenm)
         }else if(filenm.charAt(0)==="F"){  // Fire
           depts.Fire.files.push(filenm)
-        }else {
-          reject("Filename didn't start with P or F")
         }
       })
-      for (const dept of Object.values(depts)) {
-        if (!dept.files.length === 0){
-          await clear_table(dept.table);
-          let getPromises = dept.files.map(async (filenm) => {
-            await load_one_file(filenm,dept.table);
-          })
-          Promise.all(getPromises)
-          .then(async (deptfiles) => {
-            await run_stored_proc(dept.sproc);
-            retfiles.concat(deptfiles);
-          });
-        }
-      }
-      resolve(retfiles);
+      let deptarr = Object.values(depts)
+      let deptPromises = deptarr.map(async (dept)=>{
+        return await load_a_dept(dept)
+      })
+      Promise.all(deptPromises)
+      .then((dfil)=>{
+        resolve(dfil.flat())
+      })
     }
     catch(err) {
       console.log(err);
       reject(err);
     }
   });
+}
+
+function load_a_dept( dept ) {
+  return new Promise(async function(resolve, reject) {
+    try {
+      if (dept.files.length > 0){
+        await clear_table(dept.table);
+        let getPromises = dept.files.map(async (deptfilenm) => {
+          return await load_one_file(deptfilenm,dept.table);
+        })
+        Promise.all(getPromises)
+        .then( async (deptfiles) => {
+          await run_stored_proc(dept.sproc);
+          resolve(deptfiles);
+        });
+      } else {
+        resolve([])
+      }
+    }
+    catch(err) {
+      console.log(err);
+      reject(err);
+    }
+  })
 }
 
 function clear_table(table){
@@ -96,6 +110,8 @@ function clear_table(table){
 
       request = new Request("delete from " + table, function(err, rowCount) {
         if (err) {
+          console.log(err);
+          connection.close();
           reject(err);
         }
         console.log(`Table ${table} Cleared`);
@@ -117,6 +133,8 @@ function run_stored_proc(sproc){
       }
       request = new Request("exec " + sproc, function(err, rowCount) {     // <============ stored procedure name: sptelestaff_insert_time
         if (err) {
+          console.log(err);
+          connection.close();
           reject(err);
         }
         console.log(`Stored Procedure ${sproc} Run`);
@@ -172,6 +190,7 @@ function load_one_file( filenm, table ) {
           resolve(filenm); // file on ftp still needs to be deleted
         }
         if (err) {
+          console.log("Load error", err)
           connection.close();
           reject(err);
         }
