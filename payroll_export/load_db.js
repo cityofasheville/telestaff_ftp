@@ -20,6 +20,8 @@ const dbConfig = {
       server: process.env.sql_host,
       options: {
           database: process.env.sql_db,  
+          connectionTimeout: 30000,
+          requestTimeout: 680000,
           encrypt: false,
           trustServerCertificate: false
       }
@@ -222,10 +224,12 @@ function load_one_file( filenm, table ) {
         bom: true,
         columns: true,
         cast: function(value, context){ 
-          if(context.column === 'from' || context.column === 'through') {
-            return `${value.slice(0,19)}`  // Telestaff date format is nonstandard '2020-05-03 08:00:00 EDT'
+          if(context.column === 'from') {
+              return value.replace(' 00:',' 24:')            // "from" date format is '2020-05-03 8:00:00' 
+          } else if(context.column === 'through') {
+              return value.replace(' 00:',' 24:').slice(0,19) // "to" date format is '2020-05-03 08:00:00 EDT' 
           } else {
-            return value;
+              return value;
           }
         }
       }))
