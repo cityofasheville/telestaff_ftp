@@ -20,6 +20,6 @@
   "dependencies": {
     "dotenv": "^8.2.0",
     "ssh2-sftp-client": "^5.0.1",
-    "tedious": "^8.0.1"
+    "tedious": "^9.2.3"
   }
 }
