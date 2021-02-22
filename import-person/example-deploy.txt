@@ -1,0 +1,38 @@
+# This is a shell script to deploy the Lambda
+
+rm deploy.zip 2> /dev/null
+
+# For Windows, use 7z
+# 7z a -r -tzip deploy.zip index.js PersonXML.sql node_modules/*
+zip -r deploy.zip index.js PersonXML.sql node_modules/*
+
+aws lambda delete-function --function-name telestaff_import_person 2> /dev/null
+
+aws lambda create-function --function-name telestaff_import_person \
+--description "Create person file from Munis data and import to Telestaff FTP" \
+--zip-file fileb://deploy.zip \
+--role <role arn> \
+--tags "<tags>" \
+--timeout 120 \
+--environment Variables="{ \
+ftp_host=<host>, \
+ftp_import_path=/PROD/import/ongoing.unprocessed/, \
+ftp_export_path=/PROD/export/payroll/, \
+ftp_user=<user>, \
+ftp_pw=<password>, \
+
+sql_host=<host>, \
+sql_db=<database>, \
+sql_user=<user>, \
+sql_pw=<password>, \
+}" \
+--vpc-config SubnetIds=<subnet>,SecurityGroupIds=<sg-> \
+--handler index.handler --runtime nodejs12.x
+
+
+# Or to update the code without deleting Lambda
+rm deploy.zip 2> /dev/null
+
+zip -r deploy.zip index.js PersonXML.sql node_modules/*
+
+aws lambda update-function-code --function-name telestaff_import_person --zip-file fileb://deploy.zip
