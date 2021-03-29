@@ -16,7 +16,7 @@ SELECT (
 			select 'Insert' AS [@Action], PayrollID, 
 			CASE WHEN [To] < CAST(GETDATE() AS DATE) OR PersonStatus = 'N' THEN 'Y' ELSE 'N' END AS Retired, 
 			[From], [To] AS Through, FirstName, MI, LastName, Contact1, Contact2, 
-			rtrim(Contact3) Contact3, rtrim(Contact4) Contact4, rtrim(Contact3) AS LoginID, BaseAuthority, Institution
+			rtrim(Contact3) Contact3, rtrim(Contact4) Contact4, BaseAuthority, Institution
 			from avl.telestaff_person01
 		for xml path('Row')
 	)) AS Rows
