@@ -8,7 +8,7 @@ const s3 = new AWS.S3();
 
 const { Connection, Request, TYPES } = require('tedious');
 
-require('dotenv').config({path:'/.env'})   // <============ for local run './.env', for lambda, '/.env/' (or comment whole line)
+require('dotenv').config({path:'./.env'})   // <============ for local run './.env', for lambda, '/.env/' (or comment whole line)
 const dbConfig = {
       authentication: {
           type: "default",

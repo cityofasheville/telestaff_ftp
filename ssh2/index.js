@@ -1,5 +1,5 @@
 const { Connection, Request } = require('tedious');
-let FTPClient = require('ssh2-sftp-client');
+const { Client } = require('ssh2');
 var fs = require('fs');
 
 require('dotenv').config({path:'./.env'})   // <<<<<<<<<<<<<<<<++++++++++++++++++=============
@@ -35,7 +35,8 @@ const config = {
     }
 }
 
-async function Run(){
+async function Run(){ 
+    console.log(config.ftpConfig)  // <<<<<<<<<<<<<<<<++++++++++++++++++=============
     try {
         for (fileObj of config.filesToSend) {
             await loadAFile(fileObj);
@@ -44,14 +45,16 @@ async function Run(){
         console.error(err);
     }
 }
-//exports.handler = event =>     // <<<<<<<<<<<<<<<<++++++++++++++++++=============   // <<<<<<<<<<<<<<<<++++++++++++++++++=============
-     Run();
+// exports.handler = event =>     // <<<<<<<<<<<<<<<<++++++++++++++++++=============   // <<<<<<<<<<<<<<<<++++++++++++++++++=============
+Run();
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 function loadAFile(fileObj){
     return new Promise(function(resolve, reject) {
         const { sqlFile, xmlFile } = fileObj;
+
         let sqlString = fs.readFileSync(sqlFile, "utf8");
+        
         const connection = new Connection(config.dbConfig);
         connection.on('connect', function(err) {
             if (err) {
@@ -64,6 +67,7 @@ function loadAFile(fileObj){
                     function(err, rowCount, rows) {
                     if (err) {
                         console.error(err);
+                        reject(err);
                     } else {
                         console.log('XML returned');
                     }
@@ -72,8 +76,10 @@ function loadAFile(fileObj){
                 request.on('row', function(columns) {
                     fs.writeFileSync('./tmp/' + xmlFile, columns[0].value);
                 });
-                request.on('requestCompleted', function (rowCount, more, rows) { 
-                    resolve(FtpStep(xmlFile));;
+                request.on('requestCompleted', async function (rowCount, more, rows) { 
+                    let ret = await FtpStep(xmlFile)
+                    console.log("db req complete")
+                    resolve(ret);
                 });
                 connection.execSql(request);
             }
@@ -88,43 +94,34 @@ function FtpStep(fileToSend){
         console.log("Sending to SFTP: " + fileToSend); 
 
         const { host, username, password, path } = config.ftpConfig;
-        
-        let readStream = fs.createReadStream('./tmp/'+fileToSend);
-        let sftp = new FTPClient();
-        sftp.on('close', (sftpError) => {
-            if(sftpError){
-                console.error(new Error("sftpError"));
-            }
-        });
-        sftp.on('error', (err) => {
-            console.error("err2" + err.level + err.description?err.description:'');
-            console.error(new Error(err, fileToSend));
-        });
 
-        sftp.connect({
+          
+        const conn = new Client();
+        conn.on('ready', () => {
+            conn.sftp((err, sftp) => {
+                if (err) {
+                    console.log(err)
+                    reject()
+                }
+                sftp.readdir(process.env.ftp_export_path, (err, list) => {
+                  if (err) reject()
+                  console.dir(list);
+                });
+                console.log("send")
+                sftp.fastPut('./tmp/' + fileToSend, path + config.dateString + fileToSend, {}, (err, ret)=>{
+                    if (err) reject()
+                    console.log("ret", ret)
+                    conn.end();
+                    resolve()
+                  }) // , "< object >options", "< function >callback")
+            });
+        }).connect({
+            port: 22,
             host,
             username,
             password,
-            debug: (msg)=>{
-                console.log(msg)
-            }
-        }).then(() => {
-            return sftp.put(readStream, path + config.dateString + fileToSend);
-        }).then(res => {
-            console.log("Sent: " + res);
-            sftp.end();
-            resolve(0);
-        }).catch(err => {
-        console.error("err3");
-        console.error(err);
-        sftp.end();
+            readyTimeout: 90000
         });
     });
 }
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////
-process.on('uncaughtException', (err)=>{
-    console.error(err);
-});
-///////////////////////////////////////////////////////////////////////////////////////////////////////
-
+``
