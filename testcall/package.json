@@ -1,8 +1,8 @@
 {
-  "name": "clear_server_files",
+  "name": "testcall",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "call-py.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -10,7 +10,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "dotenv": "^8.2.0",
-    "ssh2-sftp-client": "^5.0.2"
+    "aws-sdk": "^2.1081.0"
   }
 }

@@ -35,7 +35,8 @@ const config = {
     }
 }
 
-async function Run(){
+async function Run(){ 
+    console.log(config.ftpConfig)  // <<<<<<<<<<<<<<<<++++++++++++++++++=============
     try {
         for (fileObj of config.filesToSend) {
             await loadAFile(fileObj);
@@ -105,9 +106,9 @@ function FtpStep(fileToSend){
             host,
             username,
             password,
-            debug: (msg)=>{
-                console.log(msg)
-            }
+            // debug: (msg)=>{
+            //     console.log(msg)
+            // }
         }).then(() => {
             return sftp.put(readStream, path + config.dateString + fileToSend);
         }).then(res => {

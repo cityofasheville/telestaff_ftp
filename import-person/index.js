@@ -30,7 +30,8 @@ const config = {
             host: process.env.ftp_host,
             username: process.env.ftp_user,
             password: process.env.ftp_pw,
-            path: process.env.ftp_import_path
+            path: process.env.ftp_import_path,
+            readyTimeout: 90000
     }
 }
 
@@ -69,7 +70,7 @@ function loadAFile(fileObj){
                     connection.close();
                 });
                 request.on('row', function(columns) {
-                    fs.writeFileSync('/tmp/' + xmlFile, columns[0].value);
+                    fs.writeFileSync('./tmp/' + xmlFile, columns[0].value);
                 });
                 request.on('requestCompleted', function (rowCount, more, rows) { 
                     resolve(FtpStep(xmlFile));;
@@ -86,9 +87,9 @@ function FtpStep(fileToSend){
 
         console.log("Sending to SFTP: " + fileToSend); 
 
-        const { host, username, password, path } = config.ftpConfig;
+        const { host, username, password, path, readyTimeout} = config.ftpConfig;
         
-        let readStream = fs.createReadStream('/tmp/'+fileToSend);
+        let readStream = fs.createReadStream('./tmp/'+fileToSend);
         let sftp = new FTPClient();
         sftp.on('close', (sftpError) => {
             if(sftpError){
@@ -103,8 +104,13 @@ function FtpStep(fileToSend){
         sftp.connect({
             host,
             username,
-            password
+            password,
+            debug: (msg)=>{
+                console.log(msg)
+            },
+            readyTimeout
         }).then(() => {
+            console.log("FTP Connected");
             return sftp.put(readStream, path + config.dateString + fileToSend);
         }).then(res => {
             console.log("Sent: " + res);

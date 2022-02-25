@@ -35,6 +35,14 @@ exports.handler = async (event) => {
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 function ftp_get(){
+    // pseudocode: ftp needs: get put list del
+    // connect
+    // list <-ftp
+    // -filter
+    // foreach:
+    //  get <-ftp
+    //  -loaddb
+    //  del <-ftp
     return new Promise(function(resolve, reject) {
 
         const { host, username, password, remotepath } = ftpConfig;
@@ -56,7 +64,11 @@ function ftp_get(){
         sftp.connect({
             host,
             username,
-            password
+            password,
+            debug: (msg)=>{
+                console.log(msg)
+            },
+            readyTimeout: 99999
         })
         .then(() => {
             return sftp.list(remotepath);  // List files
@@ -69,7 +81,7 @@ function ftp_get(){
             let getPromises = filenameList.map(async filenm => {
                 console.log("Reading from FTP: " + filenm); 
                 filelist.push( filenm );
-                await sftp.get( remotepath + filenm, '/tmp/' + filenm );   //Download each file
+                await sftp.get( remotepath + filenm, './tmp/' + filenm );   //Download each file
             });
             Promise.all(getPromises)
             .then(async () => { // load_db loads database, returns successful list so remote files can be deleted

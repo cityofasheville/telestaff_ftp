@@ -8,7 +8,11 @@ const s3 = new AWS.S3();
 
 const { Connection, Request, TYPES } = require('tedious');
 
+<<<<<<< Updated upstream
 require('dotenv').config({path:'./.env'})   // <============ for local run './.env', for lambda, '/.env/' (or comment whole line)
+=======
+// require('dotenv').config({path:'./.env'})   // <============ for local run './.env', for lambda, '/.env/' (or comment whole line)
+>>>>>>> Stashed changes
 const dbConfig = {
       authentication: {
           type: "default",
@@ -242,8 +246,8 @@ function load_one_file( filenm, table ) {
           date_worked: parse(data.from, "yyyy-MM-dd kk:mm:ss", new Date() ),
           hours_worked: parseFloat(data.hours),
           note: data.rosterNote.substr(0,128),
-          date_time_from: parse(data.from, "yyyy-MM-dd kk:mm:ss", new Date()),
-          date_time_to: parse(data.through, "yyyy-MM-dd kk:mm:ss", new Date())
+          date_time_from: add(parse(data.from, "yyyy-MM-dd kk:mm:ss", new Date()),{hours: -5}), // WARNING HARD CODED EST!!! Must change to -4 for Daylight Savings !?!?!
+          date_time_to: add(parse(data.through, "yyyy-MM-dd kk:mm:ss", new Date()),{hours: -5}) // This used to work without the "add" but something changed :(
         } 
       }))
       .pipe(csv.transform (function(data, callback){ //reject bad data
