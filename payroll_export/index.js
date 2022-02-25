@@ -81,7 +81,7 @@ function ftp_get(){
             let getPromises = filenameList.map(async filenm => {
                 console.log("Reading from FTP: " + filenm); 
                 filelist.push( filenm );
-                await sftp.get( remotepath + filenm, './tmp/' + filenm );   //Download each file
+                await sftp.get( remotepath + filenm, '/tmp/' + filenm );   //Download each file
             });
             Promise.all(getPromises)
             .then(async () => { // load_db loads database, returns successful list so remote files can be deleted
