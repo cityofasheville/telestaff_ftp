@@ -35,21 +35,19 @@ exports.handler = async event => {
             Bucket: "bedrock-data-files",
             Key: "",
             Body: "",
-            path: 'telestaff-ftp-backup/'
+            path: 'telestaff-import-person/'
         },
         lambda_params: {
-            put: {
-                FunctionName: 'arn:aws:lambda:us-east-1:518970837364:function:ftp-jobs-py', // the lambda to invoke
-                InvocationType: 'RequestResponse',
-                LogType: 'None',
-                Payload: `{
-                    "action": "put",
-                    "s3_connection": "s3_data_files",
-                    "s3_path": "telestaff-ftp-backup/", 
-                    "ftp_connection": "telestaff_ftp",
-                    "ftp_path": "/PROD/import/ongoing.unprocessed/",
-                    "filename": "${xmlFile}"
-                }`
+            FunctionName: 'arn:aws:lambda:us-east-1:518970837364:function:ftp-jobs-py', // the lambda to invoke
+            InvocationType: 'RequestResponse',
+            LogType: 'None',
+            Put_Payload: {
+                "action": "put",
+                "s3_connection": "s3_data_files",
+                "s3_path": "telestaff-import-person/", 
+                "ftp_connection": "telestaff_ftp",
+                "ftp_path": "/PROD/import/ongoing.unprocessed/",
+                "filename": xmlFile
             }
         }
     }
@@ -57,15 +55,15 @@ exports.handler = async event => {
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
-// Read data from DB, save to file
+// Read data from DB
 async function loadAFile(config){
 
         const { sqlFile, xmlFile } = config;
         let sqlString = fs.readFileSync(sqlFile, "utf8");
 
-        await sql.connect(config.dbConfig)
-
+        let conn = await sql.connect(config.dbConfig)
         const result = await sql.query(sqlString)
+        conn.close()
         const strResult = result.recordset[0].XMLData
 
         await sendToS3(config,strResult)
@@ -90,7 +88,8 @@ async function sendToS3(config,strResult) {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 async function ftp_Lambda_Step(config){
-        params = config.lambda_params.put;
+        params = config.lambda_params;
+        params.Payload = JSON.stringify(config.lambda_params.Put_Payload)
         try {
             const command = new InvokeCommand(params)
             const data = await lambda_client.send(command);
@@ -99,7 +98,7 @@ async function ftp_Lambda_Step(config){
             if (results_obj.statusCode === 200) {
                 console.log("FTP response: 200")
             }else{
-                console.log("FTP error")
+                console.log("FTP error: ", results_obj)
             }
         } catch (err) {
         console.log("FTP Error", err);
