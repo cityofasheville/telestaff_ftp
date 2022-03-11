@@ -5,8 +5,8 @@ const lambda_client = new LambdaClient({ region: "us-east-1" });
 
 const load_db = require('./load_db'); 
 
-// exports.handler = async event => {
-async function handler(event){    
+exports.handler = async event => {
+// async function handler(event){    
     lambda_params = {
         FunctionName: 'arn:aws:lambda:us-east-1:518970837364:function:ftp-jobs-py', // This Lambda puts files on S3
         InvocationType: 'RequestResponse',
@@ -34,7 +34,7 @@ async function handler(event){
 
     await ftp_get(lambda_params);
 }
-handler()
+// handler()
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 async function ftp_get(lambda_params){
