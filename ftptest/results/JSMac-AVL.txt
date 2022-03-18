@@ -1,0 +1,101 @@
+Custom crypto binding not available
+Local ident: 'SSH-2.0-ssh2js1.7.0'
+Client: Trying ashevillenc-wfts-xfer.kronos.net on port 22 ...
+Socket connected
+Remote ident: 'SSH-2.0-sshlib KCH'
+Outbound: Sending KEXINIT
+Inbound: Handshake in progress
+Handshake: (local) KEX method: curve25519-sha256@libssh.org,curve25519-sha256,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group-exchange-sha256,diffie-hellman-group14-sha256,diffie-hellman-group15-sha512,diffie-hellman-group16-sha512,diffie-hellman-group17-sha512,diffie-hellman-group18-sha512
+Handshake: (remote) KEX method: diffie-hellman-group16-sha512,diffie-hellman-group14-sha256,diffie-hellman-group-exchange-sha256,diffie-hellman-group14-sha1
+Handshake: KEX algorithm: diffie-hellman-group-exchange-sha256
+Handshake: (local) Host key format: ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,rsa-sha2-512,rsa-sha2-256,ssh-rsa
+Handshake: (remote) Host key format: ssh-rsa
+Handshake: Host key format: ssh-rsa
+Handshake: (local) C->S cipher: aes128-gcm@openssh.com,aes256-gcm@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr,chacha20-poly1305@openssh.com
+Handshake: (remote) C->S cipher: aes256-cbc,aes256-ctr,aes128-cbc,aes128-ctr
+Handshake: C->S Cipher: aes128-ctr
+Handshake: (local) S->C cipher: aes128-gcm@openssh.com,aes256-gcm@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr,chacha20-poly1305@openssh.com
+Handshake: (remote) S->C cipher: aes256-cbc,aes256-ctr,aes128-cbc,aes128-ctr
+Handshake: S->C cipher: aes128-ctr
+Handshake: (local) C->S MAC: hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1
+Handshake: (remote) C->S MAC: hmac-sha2-512,hmac-sha2-256,hmac-sha1
+Handshake: C->S MAC: hmac-sha2-256
+Handshake: (local) S->C MAC: hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1
+Handshake: (remote) S->C MAC: hmac-sha2-512,hmac-sha2-256,hmac-sha1
+Handshake: S->C MAC: hmac-sha2-256
+Handshake: (local) C->S compression: none,zlib@openssh.com,zlib
+Handshake: (remote) C->S compression: zlib,none
+Handshake: C->S compression: none
+Handshake: (local) S->C compression: none,zlib@openssh.com,zlib
+Handshake: (remote) S->C compression: zlib,none
+Handshake: S->C compression: none
+Outbound: Sending KEXDH_GEX_REQUEST
+Received DH GEX Group
+Outbound: Sending KEXDH_GEX_INIT
+Received DH GEX Reply
+Received DH Reply
+Host accepted by default (no verification)
+Host accepted (verified)
+Outbound: Sending NEWKEYS
+Inbound: NEWKEYS
+Verifying signature ...
+Verified signature
+Handshake completed
+Outbound: Sending SERVICE_REQUEST (ssh-userauth)
+Inbound: Received SERVICE_ACCEPT (ssh-userauth)
+Outbound: Sending USERAUTH_REQUEST (none)
+Inbound: Received USERAUTH_BANNER
+Inbound: Received USERAUTH_FAILURE (password,keyboard-interactive)
+Client: none auth failed
+Outbound: Sending USERAUTH_REQUEST (password)
+Inbound: Received USERAUTH_SUCCESS
+Outbound: Sending CHANNEL_OPEN (r:0, session)
+Inbound: CHANNEL_OPEN_CONFIRMATION (r:0, s:0)
+Outbound: Sending CHANNEL_REQUEST (r:0, subsystem: sftp)
+Inbound: CHANNEL_WINDOW_ADJUST (r:0, 2097152)
+Inbound: CHANNEL_SUCCESS (r:0)
+Outbound: Sending CHANNEL_DATA (r:0, 9)
+Inbound: CHANNEL_DATA (r:0, 9)
+SFTP: Inbound: Received VERSION (v3)
+Outbound: Sending CHANNEL_DATA (r:0, 34)
+SFTP: Outbound: Buffered OPENDIR
+send
+Outbound: Sending CHANNEL_DATA (r:0, 79)
+SFTP: Outbound: Buffered OPEN
+Inbound: CHANNEL_DATA (r:0, 28)
+SFTP: Inbound: Received HANDLE (id:0)
+Outbound: Sending CHANNEL_DATA (r:0, 14)
+SFTP: Outbound: Buffered READDIR
+SFTP: Inbound: Received HANDLE (id:1)
+Outbound: Sending CHANNEL_DATA (r:0, 22)
+SFTP: Outbound: Buffered FSETSTAT
+Inbound: CHANNEL_DATA (r:0, 293)
+SFTP: Inbound: Received NAME (id:2, 2)
+Outbound: Sending CHANNEL_DATA (r:0, 14)
+SFTP: Outbound: Buffered READDIR
+Inbound: CHANNEL_DATA (r:0, 28)
+SFTP: Inbound: Received STATUS (id:3, 0, "Success")
+Outbound: Sending CHANNEL_DATA (r:0, 31978)
+SFTP: Outbound: Sent WRITE (id:5)
+Inbound: CHANNEL_DATA (r:0, 32)
+SFTP: Inbound: Received STATUS (id:4, 1, "End of file")
+Outbound: Sending CHANNEL_DATA (r:0, 14)
+SFTP: Outbound: Buffered CLOSE
+Socket error: read ECONNRESET
+node:events:368
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: read ECONNRESET
+    at TCP.onStreamRead (node:internal/stream_base_commons:220:20)
+Emitted 'error' event on Client instance at:
+    at Socket.<anonymous> (/Users/jon/Documents/telestaff_outer/Telestaff/ftptest/node_modules/ssh2/lib/client.js:745:12)
+    at Socket.emit (node:events:390:28)
+    at emitErrorNT (node:internal/streams/destroy:157:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:122:3)
+    at processTicksAndRejections (node:internal/process/task_queues:83:21) {
+  errno: -54,
+  code: 'ECONNRESET',
+  syscall: 'read',
+  level: 'client-socket'
+}

@@ -1,14 +1,12 @@
 const sql = require('mssql')
-
+const { Client } = require('ssh2');
 const { S3Client, PutObjectCommand }  = require("@aws-sdk/client-s3")
-const { InvokeCommand, LambdaClient } = require("@aws-sdk/client-lambda");
 const s3_client = new S3Client({ region: "us-east-1" });
-const lambda_client = new LambdaClient({ region: "us-east-1" });
-
+const { Readable, pipeline } = require("stream")
 const fs = require('fs');
 
 // For local..
-// require('dotenv').config({path:'./.env'})
+require('dotenv').config({path:'./.env'})
 
 exports.handler = async event => {
     const dateString = (new Date()).toJSON().replace(/:/g,'-');
@@ -31,29 +29,24 @@ exports.handler = async event => {
               trustServerCertificate: true // change to true for local dev / self-signed certs
             }
           },
-        s3_params: {
+        s3Config: {
             Bucket: "bedrock-data-files",
             Key: "",
             Body: "",
             path: 'telestaff-import-person/'
         },
-        lambda_params: {
-            FunctionName: 'arn:aws:lambda:us-east-1:518970837364:function:ftp-jobs-py', // the lambda to invoke
-            InvocationType: 'RequestResponse',
-            LogType: 'None',
-            Put_Payload: {
-                "action": "put",
-                "s3_connection": "s3_data_files",
-                "s3_path": "telestaff-import-person/", 
-                "ftp_connection": "telestaff_ftp",
-                "ftp_path": "/PROD/import/ongoing.unprocessed/",
-                "filename": xmlFile
-            }
-        }
+        ftpConfig: {
+            host: process.env.ftp_host,
+            username: process.env.ftp_user,
+            password: process.env.ftp_pw,
+            path: process.env.ftp_import_path
     }
+    }
+    console.log(config.sqlFile)
     await loadAFile(config);
 }
 
+// exports.handler({})
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 // Read data from DB
 async function loadAFile(config){
@@ -64,22 +57,22 @@ async function loadAFile(config){
         let conn = await sql.connect(config.dbConfig)
         const result = await sql.query(sqlString)
         conn.close()
-        const strResult = result.recordset[0].XMLData
+        const data = result.recordset[0].XMLData
 
-        await sendToS3(config,strResult)
+        await sendToS3(config,data)
+        await sendToFtp(config,data)
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
-async function sendToS3(config,strResult) {
+async function sendToS3(config,data) {
     try{
-        const uploadParams = config.s3_params
-        uploadParams.Body = strResult
+        const uploadParams = config.s3Config
+        uploadParams.Body = data
         uploadParams.Key = uploadParams.path + config.xmlFile
 
         const command = new PutObjectCommand(uploadParams)
         const response = await s3_client.send(command)
         console.log("S3 response:", response.$metadata.httpStatusCode)
-        await ftp_Lambda_Step(config)
     }
     catch(err) {
         console.log("S3 Err: ", err)
@@ -87,23 +80,39 @@ async function sendToS3(config,strResult) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
-async function ftp_Lambda_Step(config){
-        params = config.lambda_params;
-        params.Payload = JSON.stringify(config.lambda_params.Put_Payload)
-        try {
-            const command = new InvokeCommand(params)
-            const data = await lambda_client.send(command);
-            const ftp_result_str = Buffer.from(data.Payload).toString()
-            let results_obj = JSON.parse(ftp_result_str)
-            if (results_obj.statusCode === 200) {
-                console.log("FTP response: 200")
-            }else{
-                console.log("FTP error: ", results_obj)
-            }
-        } catch (err) {
-        console.log("FTP Error", err);
-        }
-
-        
-
+function sendToFtp(config,data){
+    return new Promise(function(resolve, reject) {
+        const readablestreamdata = Readable.from([data])
+        const { host, username, password, path } = config.ftpConfig;
+          
+        const conn = new Client();
+        conn.on('ready', () => {
+            conn.sftp((err, sftp) => {
+                if (err) {
+                    console.log(err)
+                    reject()
+                }
+                sftp.readdir(process.env.ftp_export_path, (err, list) => {
+                  if (err) reject()
+                  console.dir(list);
+                });
+                console.log("send")
+                let writableftp = sftp.createWriteStream(path + config.xmlFile)
+                pipeline(
+                    readablestreamdata,
+                    writableftp,
+                    ()=>{
+                        conn.end();
+                        resolve()
+                    }
+                )
+            });
+        }).connect({
+            port: 22,
+            host,
+            username,
+            password,
+            readyTimeout: 90000
+        });
+    });
 }
