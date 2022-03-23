@@ -112,7 +112,10 @@ function sendToFtp(config,data){
             host,
             username,
             password,
-            readyTimeout: 90000
+            readyTimeout: 900000,
+            debug: (msg)=> {
+                console.log(msg)
+            }
         });
     });
 }
