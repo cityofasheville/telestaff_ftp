@@ -11,25 +11,13 @@ exports.handler = async event => {
         FunctionName: 'arn:aws:lambda:us-east-1:518970837364:function:ftp-jobs-py', // This Lambda puts files on S3
         InvocationType: 'RequestResponse',
         LogType: 'None',
-        List_Payload: {
-            "action": "list",
-            "ftp_connection": "telestaff_ftp",
-            "ftp_path": "/PROD/export/payroll/"
-        },
-        Get_Payload: {
+        GetAll_Payload: {
             "action": "get",
             "s3_connection": "s3_data_files",
             "s3_path": "telestaff-payroll-export/", 
             "ftp_connection": "telestaff_ftp",
-            "ftp_path": "/PROD/export/payroll/",
-            "filename": ""
+            "ftp_path": "/PROD/export/payroll/"
         },
-        Del_Payload: {
-            "action": "del",
-            "ftp_connection": "telestaff_ftp",
-            "ftp_path": "/PROD/export/payroll/",
-            "filename": ""
-        }
     }
 
     await ftp_get(lambda_params);
@@ -40,72 +28,16 @@ exports.handler = async event => {
 async function ftp_get(lambda_params){
     file_downloaded_list = []
     try {
-        // List all new files
-        lambda_params.Payload = JSON.stringify(lambda_params.List_Payload)
-
-        let results_obj = await send_to_lambda(lambda_params)
-        console.log("List FTP: ", results_obj)
+        lambda_params.Payload = JSON.stringify(lambda_params.GetAll_Payload)
+        console.log("Get All and Delete FTP: ", results_obj)
 
         let filenameList = results_obj.body
         .filter( filenm => filenm !== "payroll-report-export.csv" )
         .filter( filenm => filenm !== "APD-daily-payroll-export.csv" );
 
-        // Download each file from FTP: using reduce to call async func sequentially
-        const call_download_a_file = async (previous, filenm) => {
-            await previous;
-            file_downloaded_list.push(filenm)
-            return download_a_file(lambda_params,filenm);
-        };
-        await filenameList.reduce(call_download_a_file, Promise.resolve())
-
-        // Load each file into Db
-        let files_loaded_to_db = await load_db( file_downloaded_list )
-
-        // Delete each file from FTP: using reduce to call async func sequentially
-        const call_del_ftp_file = async (previous, filenm) => {
-            await previous;
-            return del_ftp_file(lambda_params,filenm);
-        };
-        await files_loaded_to_db.reduce(call_del_ftp_file, Promise.resolve())
+        await load_db( filenameList )
 
     } catch (err) {
         console.log("FTP Error: ", err);
     }
-}
-
-async function del_ftp_file(lambda_params,filenm) {
-    try {
-        lambda_params.Del_Payload.filename = filenm
-        lambda_params.Payload = JSON.stringify(lambda_params.Del_Payload)
-        let results_obj = await send_to_lambda(lambda_params)
-        console.log("Deleted FTP: " + filenm, results_obj); 
-        return filenm
-    } catch (err) {
-        throw("FTP Delete Error: ", err);
-    }
-}
-
-async function download_a_file(lambda_params,filenm) {
-    try {
-        lambda_params.Get_Payload.filename = filenm
-        lambda_params.Payload = JSON.stringify(lambda_params.Get_Payload)
-        let results_obj = await send_to_lambda(lambda_params)
-        console.log("Downloaded FTP: " + filenm, results_obj); 
-        return filenm
-    } catch (err) {
-        throw("FTP Download Error: ", err);
-    }
-}
-
-async function send_to_lambda(lambda_params) {
-    const command = new InvokeCommand(lambda_params)
-    const data = await lambda_client.send(command);
-    const ftp_result_str = Buffer.from(data.Payload).toString()
-    let results_obj = JSON.parse(ftp_result_str)
-    if (results_obj.statusCode = 200) {
-        return results_obj
-    }else{
-        throw results_obj
-    }
-    
 }
