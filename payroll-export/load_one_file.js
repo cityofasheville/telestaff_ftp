@@ -1,17 +1,14 @@
 
 const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3')
 const s3_client = new S3Client({ region: 'us-east-1' })
-const fs = require('fs');
 const stream = require('stream');
 const csv = require('csv');
 const { parse, add } = require('date-fns');
 const util = require('util')
 const pipeline = util.promisify(stream.pipeline)
-const sql = require('mssql')
 
-async function load_one_file(filenm, tablenm, dbConfig) {
+async function load_one_file(sql, filenm, tablenm) {
   try {
-    await sql.connect(dbConfig)
 
     const params = { Bucket: 'bedrock-data-files', Key: 'telestaff-payroll-export/' + filenm }
     const cmd = new GetObjectCommand(params)
@@ -42,7 +39,7 @@ async function load_one_file(filenm, tablenm, dbConfig) {
         request.bulk(table, (err, result) => {
           if (err) console.log("err", err)
           console.log("Load file ", filenm, "to DB: Results: ", result)
-          sql.close()
+          // sql.close()
           writableDB.destroy()
         });
       }

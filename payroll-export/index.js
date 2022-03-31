@@ -12,7 +12,7 @@ exports.handler = async event => {
         InvocationType: 'RequestResponse',
         LogType: 'None',
         GetAll_Payload: {
-            "action": "get",
+            "action": "getall",
             "s3_connection": "s3_data_files",
             "s3_path": "telestaff-payroll-export/", 
             "ftp_connection": "telestaff_ftp",
@@ -29,6 +29,17 @@ async function ftp_get(lambda_params){
     file_downloaded_list = []
     try {
         lambda_params.Payload = JSON.stringify(lambda_params.GetAll_Payload)
+
+        const command = new InvokeCommand(lambda_params)
+        const data = await lambda_client.send(command);
+        const ftp_result_str = Buffer.from(data.Payload).toString()
+        let results_obj = JSON.parse(ftp_result_str)
+        if (results_obj.statusCode === 200) {
+            console.log("FTP response: 200")
+        }else{
+            throw(results_obj)
+        }
+
         console.log("Get All and Delete FTP: ", results_obj)
 
         let filenameList = results_obj.body
@@ -39,5 +50,6 @@ async function ftp_get(lambda_params){
 
     } catch (err) {
         console.log("FTP Error: ", err);
+        throw("FTP Error: " + err);
     }
 }

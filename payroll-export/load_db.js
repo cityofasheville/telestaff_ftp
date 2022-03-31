@@ -1,8 +1,3 @@
-const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3')
-const s3_client = new S3Client({ region: 'us-east-1' })
-const fs = require('fs');
-const Stream = require('stream');
-const csv = require('csv');
 const sql = require('mssql')
 
 const load_one_file = require('./load_one_file');
@@ -52,24 +47,26 @@ async function load_db(filelist) {
       }
   }
   try {
-      // categorize files as PD or FD
-      filelist.map((filenm) => {
-          if (filenm.charAt(0) === "P") {        // Police
-              depts.Police.files.push(filenm)
-          } else if (filenm.charAt(0) === "F") {  // Fire
-              depts.Fire.files.push(filenm)
-          }
-      })        
-      let deptarr = Object.values(depts)
+    await sql.connect(dbConfig)
+    // categorize files as PD or FD
+    filelist.map((filenm) => {
+        if (filenm.charAt(0) === "P") {        // Police
+            depts.Police.files.push(filenm)
+        } else if (filenm.charAt(0) === "F") {  // Fire
+            depts.Fire.files.push(filenm)
+        }
+    })        
+    let deptarr = Object.values(depts)
 
-      // Load each of FD/PD: using reduce to call async func sequentially
-      const call_load_a_dept = async (previous, dept) => {
-          await previous;
-          return load_a_dept(dept,dbConfig);
-      };
-      let dfil = await deptarr.reduce(call_load_a_dept, Promise.resolve())
+    // Load each of FD/PD: using reduce to call async func sequentially
+    const call_load_a_dept = async (previous, dept) => {
+        await previous;
+        return load_a_dept(sql,dept);
+    };
+    let dfil = await deptarr.reduce(call_load_a_dept, Promise.resolve())
 
-      return filelist
+    sql.close()
+    return filelist
   }
   catch (err) {
       console.log(err);
@@ -77,19 +74,21 @@ async function load_db(filelist) {
   }
 }
 
-async function load_a_dept(dept, dbConfig) { // for each of FD/PD, clear table, load all files, run sp
+async function load_a_dept(sql, dept) { // for each of FD/PD, clear table, load all files, run sp
   try {
     if(dept.files.length == 0) return
 
-    await clear_table(dept.tablenm, dbConfig);
+    await clear_table(sql, dept.tablenm);
 
     // Load each file: using reduce to call async func sequentially
     const call_load_one_file = async (previous, deptfilenm) => {
         await previous;
-        return load_one_file(deptfilenm, dept.tablenm, dbConfig);
+        return load_one_file(sql, deptfilenm, dept.tablenm);
     };
     let deptfiles = await dept.files.reduce(call_load_one_file, Promise.resolve())
-    await run_stored_proc(dept.sproc, dbConfig);
+
+    await run_stored_proc(sql, dept.sproc);
+    
     return
   }
   catch (err) {
@@ -98,16 +97,14 @@ async function load_a_dept(dept, dbConfig) { // for each of FD/PD, clear table, 
   }
 }
 
-// async function load_one_file(filenm, tablenm, dbConfig){
+// async function load_one_file(sql, filenm, tablenm){
 //   console.log("load_one_file ",tablenm, "fake: ")
 //   return filenm
 // }
 
-async function clear_table(tablenm,dbConfig){
+async function clear_table(sql, tablenm){
   try{
-    await sql.connect(dbConfig)
     const result = await sql.query("delete from " + tablenm)
-    // sql.close()
 
     console.log("Clear table ",tablenm, "Result: ", result.rowsAffected)
   } catch (err){
@@ -115,11 +112,9 @@ async function clear_table(tablenm,dbConfig){
   }
 }
 
-async function run_stored_proc(sproc,dbConfig){
+async function run_stored_proc(sql, sproc){
   try{
-    await sql.connect(dbConfig)
     const result = await sql.query("execute " + sproc)
-    // sql.close()
 
     console.log("Stored Procedure ", sproc, "Result: ", result.rowsAffected);
   } catch (err){
